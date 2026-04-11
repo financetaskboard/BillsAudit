@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Odoo Bill Audit Portal</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --nav:#1a1a2e;--nav2:#16213e;--accent:#0078d4;--green:#107c10;--red:#d83b01;
+  --gold:#e6a817;--orange:#ca5010;--purple:#5c0099;
+  --bg:#f3f2f1;--surface:#fff;--border:#e1dfdd;--text:#201f1e;--muted:#605e5c;--light:#8a8886;
+  font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-size:13px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* TOPBAR */
+.topbar{height:46px;background:var(--nav);display:flex;align-items:center;padding:0 16px;gap:11px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.07)}
+.brand{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.logo{width:28px;height:28px;background:var(--accent);border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff}
+.brand-name{color:#fff;font-size:13px;font-weight:600;line-height:1.2}
+.brand-sub{color:rgba(255,255,255,0.38);font-size:10px}
+.tdiv{width:1px;height:20px;background:rgba(255,255,255,0.13);flex-shrink:0}
+.fy-badge{background:rgba(0,120,212,0.22);border:1px solid rgba(0,120,212,0.45);color:#62b6f7;font-size:11px;font-weight:600;padding:2px 9px;border-radius:2px;white-space:nowrap}
+.conn{display:flex;align-items:center;gap:5px;color:rgba(255,255,255,0.45);font-size:11px;white-space:nowrap}
+.cdot{width:7px;height:7px;border-radius:50%;background:#107c10;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.tr-top{margin-left:auto;display:flex;align-items:center;gap:7px}
+.ibt{width:30px;height:30px;border:none;background:transparent;color:rgba(255,255,255,0.55);font-size:15px;cursor:pointer;border-radius:2px;display:flex;align-items:center;justify-content:center}
+.ibt:hover{background:rgba(255,255,255,0.09);color:#fff}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.uname{color:rgba(255,255,255,0.65);font-size:12px}
+
+/* DATABAR */
+.databar{height:42px;background:var(--nav2);border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:stretch;padding:0 0 0 16px;flex-shrink:0}
+.databar-label{display:flex;align-items:center;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.3);padding-right:14px;border-right:1px solid rgba(255,255,255,0.08);margin-right:4px;white-space:nowrap}
+.dtab{display:flex;align-items:center;gap:7px;padding:0 15px;color:rgba(255,255,255,0.55);font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:all .13s;white-space:nowrap;position:relative;user-select:none}
+.dtab:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.88)}
+.dtab.active{color:#fff;border-bottom-color:var(--accent);background:rgba(0,120,212,0.12)}
+.dtab .ic{font-size:13px}
+.dtab-badge{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:9px}
+.dtab-badge.warn{background:var(--red)}
+.databar-right{margin-left:auto;display:flex;align-items:center;gap:6px;padding-right:14px}
+.dbtn{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:2px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.65);font-family:inherit;white-space:nowrap;transition:all .13s}
+.dbtn:hover{background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.3)}
+.dbtn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.dbtn.primary:hover{background:#006cbe}
+
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:210px;background:var(--nav);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.05)}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08)}
+.sec-lbl{color:rgba(255,255,255,0.25);font-size:10px;font-weight:600;letter-spacing:1.1px;text-transform:uppercase;padding:14px 13px 5px;display:flex;align-items:center;gap:6px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.06)}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 13px;color:rgba(255,255,255,0.58);cursor:pointer;font-size:12.5px;border-left:2px solid transparent;transition:all .13s;user-select:none}
+.ni:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.88)}
+.ni.active{background:rgba(0,120,212,0.15);color:#62b6f7;border-left-color:var(--accent)}
+.ni .ic{font-size:13px;width:17px;text-align:center;flex-shrink:0}
+.nbadge{margin-left:auto;font-size:10px;font-weight:700;padding:1px 6px;border-radius:9px;color:#fff}
+.nbadge.blue{background:var(--accent)}
+.nbadge.warn{background:var(--red)}
+.nbadge.gold{background:var(--gold);color:#1a1a2e}
+.nbadge.green{background:var(--green)}
+.sf{margin-top:auto;padding:11px 13px;border-top:1px solid rgba(255,255,255,0.05)}
+.sf-item{display:flex;align-items:center;gap:7px;color:rgba(255,255,255,0.3);font-size:11px;padding:4px 0;cursor:pointer}
+.sf-item:hover{color:rgba(255,255,255,0.55)}
+.ver{color:rgba(255,255,255,0.15);font-size:10px;margin-top:7px}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.content{flex:1;overflow-y:auto;padding:0}
+.content::-webkit-scrollbar{width:6px}
+.content::-webkit-scrollbar-thumb{background:#c8c6c4;border-radius:3px}
+.page{display:none}
+.page.active{display:block}
+.page-inner{padding:16px 20px}
+
+/* PAGE TOOLBAR */
+.ptb{height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:10px;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,0.07)}
+.pdot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.ptitle{font-size:14px;font-weight:600;white-space:nowrap}
+.pbc{color:var(--muted);font-size:11px;white-space:nowrap}
+.tbr{margin-left:auto;display:flex;gap:6px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .13s;font-family:inherit;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#006cbe}
+.btn-default{background:#fff;color:var(--text);border-color:var(--border)}
+.btn-default:hover{background:#f3f2f1;border-color:#8a8886}
+.btn-success{background:var(--green);color:#fff}
+.btn-warn{background:var(--red);color:#fff}
+.fsel{border:1px solid var(--border);background:#fff;padding:5px 8px;font-size:12px;border-radius:3px;color:var(--text);cursor:pointer;font-family:inherit}
+
+/* KPI CARDS */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.kpi-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--border);padding:12px 14px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.kpi.blue{border-top-color:var(--accent)}.kpi.green{border-top-color:var(--green)}.kpi.red{border-top-color:var(--red)}.kpi.gold{border-top-color:var(--gold)}.kpi.orange{border-top-color:var(--orange)}.kpi.purple{border-top-color:var(--purple)}
+.kpi-lbl{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:3px}
+.kpi-val{font-size:22px;font-weight:300;line-height:1.1}
+.kpi-val.blue{color:var(--accent)}.kpi-val.green{color:var(--green)}.kpi-val.red{color:var(--red)}.kpi-val.gold{color:var(--gold)}.kpi-val.orange{color:var(--orange)}.kpi-val.purple{color:var(--purple)}
+.kpi-sub{font-size:11px;color:var(--light);margin-top:3px}
+
+/* ISSUE CARDS GRID */
+.issue-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.icard{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--border);border-radius:3px;padding:13px 15px;cursor:pointer;transition:box-shadow .15s;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.icard:hover{box-shadow:0 3px 10px rgba(0,0,0,0.12)}
+.icard.sel{box-shadow:0 0 0 2px var(--accent);border-left-color:var(--accent)}
+.icard.ic-red{border-left-color:var(--red)}.icard.ic-gold{border-left-color:var(--gold)}.icard.ic-orange{border-left-color:var(--orange)}.icard.ic-purple{border-left-color:var(--purple)}
+.icard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.icard-icon{font-size:18px}
+.icard-pct{font-size:11px;font-weight:700;padding:2px 7px;border-radius:2px;white-space:nowrap}
+.pct-red{background:#fde7e9;color:var(--red)}.pct-gold{background:#fff4ce;color:#835b00}.pct-orange{background:#fef0e6;color:var(--orange)}.pct-purple{background:#f0e6ff;color:var(--purple)}
+.icard-count{font-size:28px;font-weight:300;line-height:1}
+.cnt-red{color:var(--red)}.cnt-gold{color:#835b00}.cnt-orange{color:var(--orange)}.cnt-purple{color:var(--purple)}
+.icard-label{font-size:11.5px;color:var(--muted);margin-top:3px}
+.icard-foot{font-size:10.5px;color:var(--light);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+
+/* FILTER BAR */
+.fbar{background:var(--surface);border:1px solid var(--border);padding:9px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px;border-radius:3px;flex-wrap:wrap}
+.flbl{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
+.fr{margin-left:auto;display:flex;gap:6px}
+.sbx{display:flex;align-items:center;gap:5px;border:1px solid var(--border);background:#fff;padding:4px 9px;border-radius:3px}
+.sbx input{border:none;outline:none;font-size:12px;color:var(--text);background:transparent;font-family:inherit;width:180px}
+
+/* SYNC / CONNECTION PANEL */
+.sync-panel{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.sync-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.sync-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.fg{margin-bottom:0}
+.flabel{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;display:block}
+.finput{width:100%;border:1px solid var(--border);border-radius:3px;padding:6px 9px;font-size:12.5px;color:var(--text);font-family:inherit}
+.finput:focus{outline:none;border-color:var(--accent)}
+.sync-actions{display:flex;gap:8px;align-items:center;padding-top:10px;border-top:1px solid var(--border)}
+.sync-info{font-size:11px;color:var(--muted);margin-left:8px}
+.info-box{background:#e8f4fd;border:1px solid #c8dff5;border-radius:3px;padding:10px 13px;font-size:12px;color:#004e8c;margin-bottom:12px}
+.warn-box{background:#fff4ce;border:1px solid #e6c800;border-radius:3px;padding:10px 13px;font-size:12px;color:#5c3d00;margin-bottom:12px}
+.ok-box{background:#dff6dd;border:1px solid #107c10;border-radius:3px;padding:10px 13px;font-size:12px;color:#004b1c;margin-bottom:12px}
+
+/* PROGRESS BAR */
+.prog-wrap{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:14px 18px;margin-bottom:14px;display:none}
+.prog-label{font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;display:flex;justify-content:space-between}
+.prog-track{height:6px;background:#f3f2f1;border-radius:3px;overflow:hidden;margin-bottom:6px}
+.prog-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s;width:0%}
+.prog-step{font-size:11px;color:var(--muted)}
+
+/* TABLE CARD */
+.tcard{background:var(--surface);border:1px solid var(--border);border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.06);overflow:hidden;margin-bottom:16px}
+.thdr{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:#faf9f8;flex-wrap:wrap}
+.thdr-title{font-size:12.5px;font-weight:700;color:var(--text)}
+.thdr-sub{font-size:11px;color:var(--muted)}
+.twrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr th{padding:7px 10px;text-align:right;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;border-bottom:2px solid var(--border);background:#faf9f8}
+thead tr th.left{text-align:left}
+td{padding:8px 10px;text-align:right;border-bottom:1px solid #f3f2f1;vertical-align:middle;font-size:12px}
+td.left{text-align:left}
+tr:hover td{background:#faf9f8}
+tr.total-row td{background:#faf9f8;font-weight:700;border-top:2px solid var(--border);border-bottom:none}
+tr.flag-row td{background:#fff8f8}
+
+.tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:2px;font-size:11px;font-weight:600;white-space:nowrap}
+.tag-ok{background:#dff6dd;color:#107c10}
+.tag-err{background:#fde7e9;color:#d83b01}
+.tag-warn{background:#fff4ce;color:#835b00}
+.tag-info{background:#e8f4fd;color:#0066cc}
+.tag-purple{background:#f0e6ff;color:#5c0099}
+.tag-gray{background:#f3f2f1;color:var(--muted)}
+
+.score-bar{display:inline-flex;align-items:center;gap:6px}
+.sbar-track{height:5px;width:70px;background:#f3f2f1;border-radius:3px;overflow:hidden;display:inline-block}
+.sbar-fill{height:100%;border-radius:3px}
+
+.icon-btn{width:26px;height:26px;border:1px solid var(--border);background:#fff;border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);transition:all .13s}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);background:#e8f4fd}
+
+/* PAGER */
+.pager{padding:8px 14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#faf9f8}
+.pager-info{font-size:11px;color:var(--muted)}
+.pager-btns{display:flex;gap:4px}
+
+/* STATUS BAR */
+.sbar{height:22px;background:#faf9f8;border-top:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:14px;flex-shrink:0}
+.sitem{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+.sdot{width:6px;height:6px;border-radius:50%}
+
+/* TOAST */
+.toast{position:fixed;bottom:30px;right:24px;background:#323130;color:#fff;font-size:12.5px;padding:9px 16px;border-radius:4px;z-index:9999;display:none;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,0.25)}
+
+/* HOME GRID */
+.home-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.home-card{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.06);cursor:pointer;transition:box-shadow .15s}
+.home-card:hover{box-shadow:0 3px 12px rgba(0,0,0,0.12)}
+.home-card-icon{font-size:22px;margin-bottom:8px}
+.home-card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.home-card-desc{font-size:11.5px;color:var(--muted);line-height:1.5}
+.home-card-meta{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.home-card-count{font-size:20px;font-weight:300}
+.home-card-count.red{color:var(--red)}.home-card-count.blue{color:var(--accent)}.home-card-count.green{color:var(--green)}.home-card-count.gold{color:#835b00}
+
+/* REPORT SECTION */
+.rep-section{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:14px 18px;margin-bottom:12px}
+.rep-title{font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.rep-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.rep-item{border:1px solid var(--border);border-radius:3px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .13s}
+.rep-item:hover{border-color:var(--accent);background:#f0f7ff}
+.rep-item-icon{font-size:20px;width:36px;text-align:center}
+.rep-item-title{font-size:12.5px;font-weight:600;color:var(--text)}
+.rep-item-sub{font-size:11px;color:var(--muted)}
+</style>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">OB</div>
+    <div><div class="brand-name">Odoo Bill Audit</div><div class="brand-sub">Ginesys Accounting</div></div>
+  </div>
+  <div class="tdiv"></div>
+  <span class="fy-badge">FY 2025–26</span>
+  <div class="tdiv"></div>
+  <div class="conn"><div class="cdot"></div>ginesys.odoo.com</div>
+  <div class="tr-top">
+    <button class="ibt" title="Refresh" onclick="toast('Refreshing data...','🔄')">⟳</button>
+    <button class="ibt" title="Notifications">🔔</button>
+    <div class="tdiv"></div>
+    <span class="uname">Kashish M.</span>
+    <div class="avatar">KM</div>
+  </div>
+</div>
+
+<!-- DATABAR -->
+<div class="databar">
+  <span class="databar-label">Modules</span>
+  <div class="dtab active" onclick="switchTab('dashboard')"><span class="ic">🏠</span> Dashboard</div>
+  <div class="dtab" onclick="switchTab('audit')"><span class="ic">🔍</span> Bill Audit <span class="dtab-badge warn" id="badge-audit">23</span></div>
+  <div class="dtab" onclick="switchTab('attachment')"><span class="ic">📎</span> Attachments <span class="dtab-badge warn" id="badge-att">14</span></div>
+  <div class="dtab" onclick="switchTab('narration')"><span class="ic">📝</span> Narration <span class="dtab-badge" id="badge-nar">9</span></div>
+  <div class="dtab" onclick="switchTab('account')"><span class="ic">🏦</span> Accounts <span class="dtab-badge" id="badge-acc">7</span></div>
+  <div class="dtab" onclick="switchTab('tds')"><span class="ic">%</span> TDS <span class="dtab-badge warn" id="badge-tds">13</span></div>
+  <div class="dtab" onclick="switchTab('gst')"><span class="ic">G</span> GST <span class="dtab-badge" id="badge-gst">5</span></div>
+  <div class="dtab" onclick="switchTab('reports')"><span class="ic">📊</span> Reports</div>
+  <div class="databar-right">
+    <button class="dbtn" onclick="switchTab('settings')">⚙ Settings</button>
+    <button class="dbtn primary" onclick="runFullScan()">▶ Run Full Scan</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sec-lbl">Audit Checks</div>
+  <div class="ni active" id="ni-dashboard" onclick="switchTab('dashboard')"><span class="ic">🏠</span> Overview</div>
+  <div class="ni" id="ni-audit" onclick="switchTab('audit')"><span class="ic">🔍</span> Bill Review <span class="nbadge warn">23</span></div>
+  <div class="sec-lbl">Issues</div>
+  <div class="ni" id="ni-attachment" onclick="switchTab('attachment')"><span class="ic">📎</span> No Attachment <span class="nbadge warn" id="sn-att">14</span></div>
+  <div class="ni" id="ni-narration" onclick="switchTab('narration')"><span class="ic">📝</span> No Narration <span class="nbadge blue" id="sn-nar">9</span></div>
+  <div class="ni" id="ni-account" onclick="switchTab('account')"><span class="ic">🏦</span> Wrong Account <span class="nbadge gold" id="sn-acc">7</span></div>
+  <div class="ni" id="ni-tds" onclick="switchTab('tds')"><span class="ic">%</span> TDS Issues <span class="nbadge warn" id="sn-tds">13</span></div>
+  <div class="ni" id="ni-gst" onclick="switchTab('gst')"><span class="ic">G</span> GST Issues <span class="nbadge gold" id="sn-gst">5</span></div>
+  <div class="sec-lbl">Output</div>
+  <div class="ni" id="ni-reports" onclick="switchTab('reports')"><span class="ic">📊</span> Reports &amp; Export</div>
+  <div class="ni" id="ni-settings" onclick="switchTab('settings')"><span class="ic">⚙</span> Settings</div>
+  <div class="sf">
+    <div class="sf-item">📅 Last scan: Today 21:16</div>
+    <div class="sf-item">🏢 Company: Ginesys</div>
+    <div class="ver">Odoo Bill Audit v1.0</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+<div class="content">
+
+<!-- ══ DASHBOARD PAGE ══ -->
+<div class="page active" id="page-dashboard">
+  <div class="ptb">
+    <div class="pdot"></div>
+    <span class="ptitle">Dashboard</span>
+    <span class="pbc">/ Overview / FY 2025–26</span>
+    <div class="tbr">
+      <select class="fsel" id="dash-period" onchange="updateDashPeriod()">
+        <option>Last 30 days</option>
+        <option selected>Last 90 days</option>
+        <option>Last 180 days</option>
+        <option>FY 2025–26</option>
+      </select>
+      <select class="fsel" id="dash-journal">
+        <option>All Journals</option>
+        <option>Gurgaon Bills</option>
+        <option>Delhi Bills</option>
+        <option>Mumbai Bills</option>
+      </select>
+      <button class="btn btn-primary" onclick="runFullScan()">▶ Run Scan</button>
+    </div>
+  </div>
+  <div class="page-inner">
+
+    <div id="dash-ok-box" class="ok-box" style="display:none">✅ Last scan completed successfully — 80 bills reviewed. <strong>39 bills fully compliant.</strong></div>
+
+    <div class="kpi-row">
+      <div class="kpi blue"><div class="kpi-lbl">Total Bills</div><div class="kpi-val blue" id="d-total">80</div><div class="kpi-sub">FY 2025-26</div></div>
+      <div class="kpi green"><div class="kpi-lbl">Compliant</div><div class="kpi-val green" id="d-clean">39</div><div class="kpi-sub">Score ≥ 85</div></div>
+      <div class="kpi red"><div class="kpi-lbl">Critical Issues</div><div class="kpi-val red" id="d-crit">23</div><div class="kpi-sub">Need fix</div></div>
+      <div class="kpi gold"><div class="kpi-lbl">Warnings</div><div class="kpi-val gold" id="d-warn">18</div><div class="kpi-sub">Need review</div></div>
+      <div class="kpi orange"><div class="kpi-lbl">Total Amount</div><div class="kpi-val orange">₹18.4L</div><div class="kpi-sub">Flagged bills value</div></div>
+    </div>
+
+    <div class="issue-grid">
+      <div class="icard ic-red" onclick="switchTab('attachment')">
+        <div class="icard-top"><span class="icard-icon">📎</span><span class="icard-pct pct-red" id="ip-att">18%</span></div>
+        <div class="icard-count cnt-red" id="ic-att">14</div>
+        <div class="icard-label">Missing Attachment</div>
+        <div class="icard-foot">No PDF or image attached to bill</div>
+      </div>
+      <div class="icard ic-red" onclick="switchTab('narration')">
+        <div class="icard-top"><span class="icard-icon">📝</span><span class="icard-pct pct-red" id="ip-nar">11%</span></div>
+        <div class="icard-count cnt-red" id="ic-nar">9</div>
+        <div class="icard-label">Narration Missing / Too Short</div>
+        <div class="icard-foot">Narration field empty or &lt; 5 characters</div>
+      </div>
+      <div class="icard ic-gold" onclick="switchTab('account')">
+        <div class="icard-top"><span class="icard-icon">🏦</span><span class="icard-pct pct-gold" id="ip-acc">9%</span></div>
+        <div class="icard-count cnt-gold" id="ic-acc">7</div>
+        <div class="icard-label">Wrong Account Used</div>
+        <div class="icard-foot">Deviates from vendor's account pattern</div>
+      </div>
+      <div class="icard ic-orange" onclick="switchTab('tds')">
+        <div class="icard-top"><span class="icard-icon">%</span><span class="icard-pct pct-orange" id="ip-wtds">8%</span></div>
+        <div class="icard-count" style="font-size:28px;font-weight:300;color:var(--orange)" id="ic-wtds">6</div>
+        <div class="icard-label">Wrong TDS Rate Applied</div>
+        <div class="icard-foot">TDS section/rate does not match vendor type</div>
+      </div>
+      <div class="icard ic-red" onclick="switchTab('tds')">
+        <div class="icard-top"><span class="icard-icon">🚫</span><span class="icard-pct pct-red" id="ip-ntds">9%</span></div>
+        <div class="icard-count cnt-red" id="ic-ntds">7</div>
+        <div class="icard-label">TDS Not Applied</div>
+        <div class="icard-foot">TDS entry missing on applicable bill</div>
+      </div>
+      <div class="icard ic-gold" onclick="switchTab('gst')">
+        <div class="icard-top"><span class="icard-icon">G</span><span class="icard-pct pct-gold" id="ip-gst">6%</span></div>
+        <div class="icard-count cnt-gold" id="ic-gst">5</div>
+        <div class="icard-label">Wrong GST Treatment</div>
+        <div class="icard-foot">IGST used instead of SGST+CGST or vice versa</div>
+      </div>
+    </div>
+
+    <!-- Recent flagged bills -->
+    <div class="tcard">
+      <div class="thdr" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:14px">🚩</span>
+          <span class="thdr-title">Recently Flagged Bills</span>
+          <span class="thdr-sub">Top 10 by severity</span>
+        </div>
+        <button class="btn btn-default" style="font-size:11px;padding:4px 10px" onclick="switchTab('audit')">View All ↗</button>
+      </div>
+      <div class="twrap">
+        <table>
+          <thead><tr>
+            <th class="left">Bill No</th><th class="left">Vendor</th><th class="left">Date</th>
+            <th>Amount</th><th class="left">Issues</th><th>Score</th><th class="left">Action</th>
+          </tr></thead>
+          <tbody id="dash-bills-body"></tbody>
+        </table>
+      </div>
+      <div class="pager"><span class="pager-info" id="dash-pager-info">Showing 1–10 of 41</span><div class="pager-btns"><button class="btn btn-default" style="font-size:11px;padding:3px 9px">Prev</button><button class="btn btn-default" style="font-size:11px;padding:3px 9px">Next</button></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ BILL AUDIT PAGE ══ -->
+<div class="page" id="page-audit">
+  <div class="ptb">
+    <div class="pdot"></div>
+    <span class="ptitle">Bill Audit Review</span>
+    <span class="pbc">/ Run scan · View all flags</span>
+    <div class="tbr">
+      <select class="fsel" id="audit-period">
+        <option>Last 30 days</option>
+        <option selected>Last 90 days</option>
+        <option>Last 180 days</option>
+        <option>FY 2025–26</option>
+      </select>
+      <select class="fsel" id="audit-journal">
+        <option>All Journals</option>
+        <option>Gurgaon Bills</option>
+        <option>Delhi Bills</option>
+      </select>
+      <button class="btn btn-default">Export CSV</button>
+      <button class="btn btn-primary" onclick="runFullScan()">▶ Run Review</button>
+    </div>
+  </div>
+  <div class="page-inner">
+    <div class="info-box">ℹ Connect to Odoo below and click <strong>Run Review</strong> to scan all vendor bills. The audit checks 6 compliance rules and scores each bill from 0–100.</div>
+    <div id="prog-wrap" class="prog-wrap">
+      <div class="prog-label"><span id="prog-step">Connecting to Odoo...</span><span id="prog-pct">0%</span></div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+      <div class="prog-step" id="prog-sub">Initialising scan engine</div>
+    </div>
+
+    <div class="kpi-row-4">
+      <div class="kpi blue"><div class="kpi-lbl">Scanned</div><div class="kpi-val blue" id="a-total">80</div><div class="kpi-sub">bills reviewed</div></div>
+      <div class="kpi green"><div class="kpi-lbl">Compliant</div><div class="kpi-val green" id="a-clean">39</div><div class="kpi-sub">score ≥ 85</div></div>
+      <div class="kpi red"><div class="kpi-lbl">Flagged</div><div class="kpi-val red" id="a-flag">41</div><div class="kpi-sub">need attention</div></div>
+      <div class="kpi gold"><div class="kpi-lbl">Avg Score</div><div class="kpi-val gold" id="a-avg">68</div><div class="kpi-sub">out of 100</div></div>
+    </div>
+
+    <div class="fbar">
+      <span class="flbl">Filter by issue:</span>
+      <button class="btn btn-primary" id="filt-all" onclick="filterAudit('all')">All</button>
+      <button class="btn btn-default" id="filt-attachment" onclick="filterAudit('attachment')">📎 No Attachment</button>
+      <button class="btn btn-default" id="filt-narration" onclick="filterAudit('narration')">📝 No Narration</button>
+      <button class="btn btn-default" id="filt-account" onclick="filterAudit('account')">🏦 Wrong Account</button>
+      <button class="btn btn-default" id="filt-wrong-tds" onclick="filterAudit('wrong-tds')">% Wrong TDS</button>
+      <button class="btn btn-default" id="filt-no-tds" onclick="filterAudit('no-tds')">🚫 No TDS</button>
+      <button class="btn btn-default" id="filt-gst" onclick="filterAudit('gst')">G GST Issue</button>
+      <div class="fr">
+        <div class="sbx"><span>🔍</span><input type="text" placeholder="Search vendor / bill no..." id="audit-search" oninput="filterAudit(currentFilter)"></div>
+      </div>
+    </div>
+
+    <div class="tcard">
+      <div class="thdr" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="thdr-title" id="audit-tbl-title">All Flagged Bills — 41</span>
+        </div>
+        <button class="btn btn-default" style="font-size:11px;padding:4px 10px" onclick="exportCSV()">⬇ Export</button>
+      </div>
+      <div class="twrap">
+        <table>
+          <thead><tr>
+            <th class="left" style="width:32px">#</th>
+            <th class="left">Bill No</th>
+            <th class="left">Vendor</th>
+            <th class="left">Date</th>
+            <th class="left">Journal</th>
+            <th>Amount</th>
+            <th class="left">Issues Found</th>
+            <th>Score</th>
+            <th>Open</th>
+          </tr></thead>
+          <tbody id="audit-body"></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <span class="pager-info" id="audit-pager"></span>
+        <div class="pager-btns">
+          <button class="btn btn-default" style="font-size:11px;padding:3px 9px">Prev</button>
+          <button class="btn btn-default" style="font-size:11px;padding:3px 9px">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ATTACHMENT PAGE ══ -->
+<div class="page" id="page-attachment">
+  <div class="ptb">
+    <div class="pdot" style="background:var(--red)"></div>
+    <span class="ptitle">Missing Attachments</span>
+    <span class="pbc">/ Bills with no supporting document</span>
+    <div class="tbr">
+      <button class="btn btn-default" onclick="exportCSV()">⬇ Export</button>
+      <button class="btn btn-warn" onclick="toast('Opening batch reminder for 14 vendors...','📧')">📧 Send Reminder</button>
+    </div>
+  </div>
+  <div class="page-inner">
+    <div class="warn-box">⚠️ <strong>14 bills</strong> have no attachment. Every posted vendor bill must have the original invoice (PDF/image) attached. Missing attachments can cause issues during GST audit and TDS assessment.</div>
+    <div class="tcard">
+      <div class="thdr"><span class="thdr-title">Bills Missing Attachment</span><span class="thdr-sub" id="att-sub">14 bills · ₹4,12,600 total value</span></div>
+      <div class="twrap">
+        <table>
+          <thead><tr>
+            <th class="left">#</th><th class="left">Bill No</th><th class="left">Vendor</th>
+            <th class="left">Bill Date</th><th class="left">Journal</th><th>Amount</th>
+            <th class="left">Status</th><th>Open in Odoo</th>
+          </tr></thead>
+          <tbody id="att-body"></tbody>
+        </table>
+      </div>
+      <div class="pager"><span class="pager-info" id="att-pager">Showing 1–14 of 14</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ NARRATION PAGE ══ -->
+<div class="page" id="page-narration">
+  <div class="ptb">
+    <div class="pdot" style="background:var(--red)"></div>
+    <span class="ptitle">Narration Issues</span>
+    <span class="pbc">/ Bills with missing or insufficient narration</span>
+    <div class="tbr">
+      <button class="btn btn-default" onclick="exportCSV()">⬇ Export</button>
+    </div>
+  </div>
+  <div class="page-inner">
+    <div class="info-box">ℹ Narration should describe the purpose of the purchase (e.g. "HP screen panel for Rohit's laptop"). Bills with empty narration or reference fields are flagged.</div>
+    <div class="tcard">
+      <div class="thdr"><span class="thdr-title">Narration Missing / Too Short</span><span class="thdr-sub">9 bills</span></div>
+      <div class="twrap">
+        <table>
+          <thead><tr>
+            <th class="left">#</th><th class="left">Bill No</th><th class="left">Vendor</th>
+            <th class="left">Date</th><th>Amount</th><th class="left">Current Narration</th>
+            <th class="left">Issue</th><th>Open</th>
+          </tr></thead>
+          <tbody id="nar-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ACCOUNT PAGE ══ -->
+<div class="page" id="page-account">
+  <div class="ptb">
+    <div class="pdot" style="background:var(--gold)"></div>
+    <span class="ptitle">Wrong Account</span>
+    <span class="pbc">/ Bills where account deviates from vendor pattern</span>
+    <div class="tbr">
+      <button class="btn btn-default" onclick="exportCSV()">⬇ Export</button>
+    </div>
+  </div>
+  <div class="page-inner">
+    <div class="warn-box">⚠️ Account is determined by learning the most-used account for each vendor over the last 12 bills. Bills using a different account are flagged for review.</div>
+    <div class="tcard">
+      <div class="thdr"><span class="thdr-title">Account Pattern Mismatches</span><span class="thdr-sub">7 bills</span></div>
+      <div class="twrap">
+        <table>
+          <thead><tr>
+            <th class="left">#</th><th class="left">Bill No</th><th class="left">Vendor</th>
+            <th class="left">Date</th><th>Amount</th>
+            <th class="left">Used Account</th><th class="left">Expected Account</th>
+            <th class="left">Match %</th><th>Open</th>
+          </tr></thead>
+          <tbody id="acc-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="thdr"><span class="thdr-title">Vendor → Account Pattern Map</span><span class="thdr-sub">Learned from last 12 bills per vendor</span></div>
+      <div class="twrap">
+        <table>
+          <thead><tr>
+            <th class="left">Vendor</th><th class="left">Expected Account</th>
+            <th>Bills Analysed</th><th>Consistency</th><th class="left">Last Used</th>
+          </tr></thead>
+          <tbody id="acc-map-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TDS PAGE ══ -->
+<div class="page" id="page-tds">
+  <div class="ptb">
+    <div class="pdot" style="background:var(--orange)"></div>
+    <span class="ptitle">TDS Issues</span>
+    <span class="pbc">/ Wrong rate applied · TDS not deducted</span>
+    <div class="tbr">
+      <select class="fsel">
+        <option>All TDS Issues</option>
+        <option>Wrong Rate Only</option>
+        <option>TDS Missing Only</option>
+      </select>
+      <button class="btn btn-default" onclick="exportCSV()">⬇ Export</button>
+    </div>
+  </div>
+  <div class="page-inner">
+    <div class="kpi-row-4">
+      <div class="kpi orange"><div class="kpi-lbl">Wrong TDS Rate</div><div class="kpi-val orange">6</div><div class="kpi-sub">bills</div></div>
+      <div class="kpi red"><div class="kpi-lbl">TDS Not Applied</div><div class="kpi-val red">7</div><div class="kpi-sub">bills</div></div>
+      <div class="kpi gold"><div class="kpi-lbl">TDS Shortfall</div><div class="kpi-val gold">₹28,400</div><div class="kpi-sub">estimated</div></div>
+      <div class="kpi blue"><div class="kpi-lbl">Applicable Threshold</div><div class="kpi-val blue">₹30,000</div><div class="kpi-sub">per vendor/year</div></div>
+    </div>
+    <div class="tcard">
+      <div class="thdr"><span class="thdr-title">TDS Issues — All 13 Bills</span></div>
+      <div class="twrap">
+        <table>
+          <thead><tr>
+            <th class="left">#</th><th class="left">Bill No</th><th class="left">Vendor</th>
+            <th class="left">Date</th><th>Amount</th>
+            <th class="left">Issue Type</th><th class="left">Applied Section</th>
+            <th class="left">Expected Section</th><th>TDS Applied</th><th>Expected TDS</th><th>Open</th>
+          </tr></thead>
+          <tbody id="tds-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GST PAGE ══ -->
+<div class="page" id="page-gst">
+  <div class="ptb">
+    <div class="pdot" style="background:var(--gold)"></div>
+    <span class="ptitle">GST Treatment Issues</span>
+    <span class="pbc">/ IGST vs SGST+CGST · Wrong rate</span>
+    <div class="tbr">
+      <button class="btn btn-default" onclick="exportCSV()">⬇ Export</button>
+    </div>
+  </div>
+  <div class="page-inner">
+    <div class="warn-box">⚠️ GST treatment is determined by comparing vendor's state (from GSTIN) with place of supply. Intra-state = SGST+CGST. Inter-state = IGST. Bills with wrong treatment are flagged.</div>
+    <div class="tcard">
+      <div class="thdr"><span class="thdr-title">GST Treatment Mismatches — 5 Bills</span></div>
+      <div class="twrap">
+        <table>
+          <thead><tr>
+            <th class="left">#</th><th class="left">Bill No</th><th class="left">Vendor</th>
+            <th class="left">Vendor State</th><th class="left">Place of Supply</th>
+            <th>Amount</th><th class="left">Applied GST</th><th class="left">Expected GST</th>
+            <th class="left">Impact</th><th>Open</th>
+          </tr></thead>
+          <tbody id="gst-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REPORTS PAGE ══ -->
+<div class="page" id="page-reports">
+  <div class="ptb">
+    <div class="pdot" style="background:var(--green)"></div>
+    <span class="ptitle">Reports &amp; Export</span>
+    <span class="pbc">/ Download audit results</span>
+  </div>
+  <div class="page-inner">
+    <div class="rep-section">
+      <div class="rep-title">📊 Audit Summary Reports</div>
+      <div class="rep-grid">
+        <div class="rep-item" onclick="toast('Generating Full Audit Report...','📊')">
+          <div class="rep-item-icon">📋</div>
+          <div><div class="rep-item-title">Full Audit Report (CSV)</div><div class="rep-item-sub">All 80 bills with scores and issue flags</div></div>
+        </div>
+        <div class="rep-item" onclick="toast('Generating Excel report...','📗')">
+          <div class="rep-item-icon">📗</div>
+          <div><div class="rep-item-title">Excel Report with Color Coding</div><div class="rep-item-sub">Color-coded by issue type, ready to share</div></div>
+        </div>
+        <div class="rep-item" onclick="toast('Generating PDF summary...','📄')">
+          <div class="rep-item-icon">📄</div>
+          <div><div class="rep-item-title">PDF Compliance Summary</div><div class="rep-item-sub">One-page summary for management review</div></div>
+        </div>
+        <div class="rep-item" onclick="toast('Generating vendor report...','🏢')">
+          <div class="rep-item-icon">🏢</div>
+          <div><div class="rep-item-title">Vendor-wise Analysis</div><div class="rep-item-sub">Issues grouped by vendor with compliance %</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="rep-section">
+      <div class="rep-title">🔎 Issue-wise Reports</div>
+      <div class="rep-grid">
+        <div class="rep-item" onclick="toast('Exporting attachment report...','📎')"><div class="rep-item-icon">📎</div><div><div class="rep-item-title">Missing Attachments (14 bills)</div><div class="rep-item-sub">List for follow-up with vendors</div></div></div>
+        <div class="rep-item" onclick="toast('Exporting narration report...','📝')"><div class="rep-item-icon">📝</div><div><div class="rep-item-title">Narration Issues (9 bills)</div><div class="rep-item-sub">Bills needing narration correction</div></div></div>
+        <div class="rep-item" onclick="toast('Exporting TDS report...','%')"><div class="rep-item-icon">%</div><div><div class="rep-item-title">TDS Issues (13 bills)</div><div class="rep-item-sub">Wrong/missing TDS with shortfall amount</div></div></div>
+        <div class="rep-item" onclick="toast('Exporting GST report...','G')"><div class="rep-item-icon">G</div><div><div class="rep-item-title">GST Treatment Issues (5 bills)</div><div class="rep-item-sub">Bills with wrong IGST/CGST/SGST</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SETTINGS PAGE ══ -->
+<div class="page" id="page-settings">
+  <div class="ptb">
+    <div class="pdot" style="background:var(--muted)"></div>
+    <span class="ptitle">Settings</span>
+    <span class="pbc">/ Odoo Connection · Audit Rules</span>
+  </div>
+  <div class="page-inner">
+    <div class="sync-panel">
+      <div class="sync-title">🔗 Odoo Connection</div>
+      <div class="sync-grid">
+        <div class="fg"><span class="flabel">Odoo URL</span><input class="finput" value="https://ginesys.odoo.com" id="s-url"/></div>
+        <div class="fg"><span class="flabel">Database</span><input class="finput" value="ginesys" id="s-db"/></div>
+        <div class="fg"><span class="flabel">Username</span><input class="finput" value="admin" id="s-user"/></div>
+        <div class="fg"><span class="flabel">Password / API Key</span><input class="finput" type="password" value="••••••••••" id="s-pass"/></div>
+      </div>
+      <div class="sync-actions">
+        <button class="btn btn-primary" onclick="toast('Connection tested — Odoo reachable ✅','✅')">Test Connection</button>
+        <button class="btn btn-default" onclick="saveSettings()">Save Settings</button>
+        <span class="sync-info" id="settings-saved-info">Last connected: Today 21:16 — ginesys.odoo.com</span>
+      </div>
+    </div>
+    <div class="sync-panel">
+      <div class="sync-title">⚙ Audit Rules</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+        <div class="fg"><span class="flabel">Min. Narration Length (chars)</span><input class="finput" value="5" type="number" id="r-nar-len"/></div>
+        <div class="fg"><span class="flabel">Account Pattern Threshold (%)</span><input class="finput" value="70" type="number" id="r-acc-thresh"/></div>
+        <div class="fg"><span class="flabel">TDS Threshold per Vendor (₹)</span><input class="finput" value="30000" type="number" id="r-tds-thresh"/></div>
+        <div class="fg"><span class="flabel">Duplicate Detection Window (days)</span><input class="finput" value="30" type="number" id="r-dup-days"/></div>
+      </div>
+      <div class="sync-actions" style="margin-top:12px">
+        <button class="btn btn-primary" onclick="saveRules()">Save Rules</button>
+        <button class="btn btn-default" onclick="resetRules()">Reset Defaults</button>
+      </div>
+    </div>
+    <!-- Firebase Configuration Panel -->
+    <div class="sync-panel">
+      <div class="sync-title">🔥 Firebase Configuration</div>
+      <div class="info-box" id="fb-status">ℹ Enter your Firebase project credentials below to enable cloud data persistence.</div>
+      <div class="sync-grid">
+        <div class="fg"><span class="flabel">API Key</span><input class="finput" id="fb-apiKey" placeholder="AIzaSy..."/></div>
+        <div class="fg"><span class="flabel">Project ID</span><input class="finput" id="fb-projectId" placeholder="my-project-id"/></div>
+        <div class="fg"><span class="flabel">Auth Domain</span><input class="finput" id="fb-authDomain" placeholder="my-project.firebaseapp.com"/></div>
+        <div class="fg"><span class="flabel">App ID</span><input class="finput" id="fb-appId" placeholder="1:123456:web:abc123"/></div>
+      </div>
+      <div class="sync-actions" style="margin-top:12px">
+        <button class="btn btn-primary" onclick="initFirebase()">Connect Firebase</button>
+        <span class="sync-info" id="fb-conn-info"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<!-- STATUS BAR -->
+<div class="sbar">
+  <div class="sitem"><div class="sdot" style="background:var(--green)"></div>Connected — ginesys.odoo.com</div>
+  <div class="sitem"><div class="sdot" style="background:var(--accent)"></div>FY 2025–26</div>
+  <div class="sitem" id="sb-scan">Last scan: Today 21:16 — 80 bills</div>
+  <div style="margin-left:auto" class="sitem">Odoo Bill Audit v1.0</div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+var BILLS = [
+  {id:'BHR/2024/3201',vendor:'Ravi Traders',date:'01/03/2026',journal:'Gurgaon Bills',amt:12400,issues:['attachment','no-tds'],score:55},
+  {id:'BHR/2024/3215',vendor:'Sharma Electricals',date:'05/03/2026',journal:'Delhi Bills',amt:8900,issues:['attachment'],score:70},
+  {id:'BHR/2024/3220',vendor:'Kapoor & Sons',date:'07/03/2026',journal:'Gurgaon Bills',amt:45000,issues:['attachment','narration'],score:40},
+  {id:'BHR/2024/3235',vendor:'Delhi Supplies Co',date:'10/03/2026',journal:'Delhi Bills',amt:3200,issues:['attachment'],score:70},
+  {id:'BHR/2024/3241',vendor:'Mehta Hardware',date:'12/03/2026',journal:'Gurgaon Bills',amt:18600,issues:['attachment','wrong-tds'],score:45},
+  {id:'BHR/2024/3255',vendor:'Gupta Tech Solutions',date:'14/03/2026',journal:'Delhi Bills',amt:92000,issues:['attachment','gst'],score:50},
+  {id:'BHR/2024/3262',vendor:'Verma Plastics',date:'16/03/2026',journal:'Mumbai Bills',amt:6500,issues:['attachment','account'],score:48},
+  {id:'BHR/2024/3270',vendor:'Jain Distributors',date:'18/03/2026',journal:'Gurgaon Bills',amt:31000,issues:['attachment'],score:70},
+  {id:'BHR/2024/3278',vendor:'Singh Furnishers',date:'20/03/2026',journal:'Delhi Bills',amt:14750,issues:['attachment','no-tds'],score:42},
+  {id:'BHR/2024/3282',vendor:'Agarwal Services',date:'22/03/2026',journal:'Gurgaon Bills',amt:7800,issues:['attachment'],score:70},
+  {id:'BHR/2024/3290',vendor:'Patel Enterprises',date:'23/03/2026',journal:'Mumbai Bills',amt:5100,issues:['narration','account'],score:55},
+  {id:'BHR/2024/3301',vendor:'Kumar Agencies',date:'25/03/2026',journal:'Delhi Bills',amt:22300,issues:['narration'],score:75},
+  {id:'BHR/2024/3310',vendor:'National Traders',date:'26/03/2026',journal:'Gurgaon Bills',amt:88000,issues:['narration','no-tds'],score:38},
+  {id:'BHR/2024/3321',vendor:'City Hardware',date:'28/03/2026',journal:'Delhi Bills',amt:4600,issues:['narration'],score:75},
+  {id:'BHR/2024/3330',vendor:'Tech Solutions Ltd',date:'29/03/2026',journal:'Gurgaon Bills',amt:67000,issues:['account','gst'],score:50},
+  {id:'BHR/2024/3340',vendor:'Office Needs India',date:'01/04/2026',journal:'Delhi Bills',amt:9200,issues:['account'],score:72},
+  {id:'BHR/2024/3345',vendor:'Prime Vendors Pvt',date:'02/04/2026',journal:'Gurgaon Bills',amt:41500,issues:['wrong-tds'],score:68},
+  {id:'BHR/2024/3350',vendor:'Star Supplies Co',date:'03/04/2026',journal:'Mumbai Bills',amt:15600,issues:['no-tds'],score:60},
+  {id:'BHR/2024/3355',vendor:'Alpha Traders',date:'04/04/2026',journal:'Gurgaon Bills',amt:33000,issues:['gst','wrong-tds'],score:45},
+  {id:'BHR/2024/3360',vendor:'Sunrise Enterprises',date:'05/04/2026',journal:'Delhi Bills',amt:27800,issues:['no-tds','narration'],score:42},
+  {id:'BHR/2024/3288',vendor:'SK COMPUTEC SYSTEMS',date:'03/04/2026',journal:'Gurgaon Bills',amt:2596,issues:['narration'],score:72},
+  {id:'BHR/2024/3370',vendor:'Ram Kumar & Co',date:'06/04/2026',journal:'Mumbai Bills',amt:18200,issues:['attachment','account'],score:44},
+  {id:'BHR/2024/3375',vendor:'Excel Computers',date:'07/04/2026',journal:'Gurgaon Bills',amt:52000,issues:['wrong-tds','gst'],score:48},
+  {id:'BHR/2024/3380',vendor:'Royal Services',date:'08/04/2026',journal:'Delhi Bills',amt:11000,issues:['attachment'],score:70},
+  {id:'BHR/2024/3385',vendor:'Spectrum Agencies',date:'09/04/2026',journal:'Gurgaon Bills',amt:39500,issues:['no-tds'],score:60},
+];
+
+var ISSUE_LABELS = {
+  'attachment':'No Attachment','narration':'No Narration',
+  'account':'Wrong Account','wrong-tds':'Wrong TDS','no-tds':'TDS Missing','gst':'Wrong GST'
+};
+var ISSUE_TAG = {
+  'attachment':'tag-err','narration':'tag-err','account':'tag-warn',
+  'wrong-tds':'tag-warn','no-tds':'tag-err','gst':'tag-warn'
+};
+
+function pINR(v){return '₹'+v.toLocaleString('en-IN');}
+
+function scoreColor(s){
+  if(s>=85)return '#107c10';
+  if(s>=65)return '#e6a817';
+  return '#d83b01';
+}
+
+function scoreTag(s){
+  var cls = s>=85?'tag-ok':s>=65?'tag-warn':'tag-err';
+  return '<span class="tag '+cls+'">'+s+'</span>';
+}
+
+function renderTags(issues){
+  return issues.map(function(i){
+    return '<span class="tag '+ISSUE_TAG[i]+'" style="margin-right:3px">'+ISSUE_LABELS[i]+'</span>';
+  }).join('');
+}
+
+function renderScoreBar(s){
+  var c = scoreColor(s);
+  return '<div class="score-bar"><div class="sbar-track"><div class="sbar-fill" style="width:'+s+'%;background:'+c+'"></div></div><span style="font-size:11px;font-weight:600;color:'+c+'">'+s+'</span></div>';
+}
+
+function openBill(id){
+  toast('Opening '+id+' in Odoo...','🔗');
+}
+
+// ── DASHBOARD TABLE ──
+function renderDashBills(){
+  var flagged = BILLS.filter(function(b){return b.issues.length>0;}).sort(function(a,b){return a.score-b.score;}).slice(0,10);
+  var html = flagged.map(function(b,i){
+    var cls = b.score<65?' class="flag-row"':'';
+    return '<tr'+cls+'>'
+      +'<td class="left" style="color:var(--muted);font-size:11px">'+(i+1)+'</td>'
+      +'<td class="left" style="font-weight:600;color:#0066cc;cursor:pointer" onclick="switchTab(\'audit\')">'+(b.id)+'</td>'
+      +'<td class="left">'+b.vendor+'</td>'
+      +'<td class="left" style="color:var(--muted)">'+b.date+'</td>'
+      +'<td style="text-align:right;font-weight:600">'+pINR(b.amt)+'</td>'
+      +'<td class="left">'+renderTags(b.issues)+'</td>'
+      +'<td style="text-align:right">'+renderScoreBar(b.score)+'</td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('dash-bills-body').innerHTML = html;
+}
+
+// ── AUDIT TABLE ──
+var currentFilter = 'all';
+function filterAudit(f){
+  currentFilter = f;
+  document.querySelectorAll('[id^="filt-"]').forEach(function(el){
+    el.className = 'btn btn-default';
+  });
+  var el = document.getElementById('filt-'+f);
+  if(el) el.className = 'btn btn-primary';
+
+  var search = (document.getElementById('audit-search')||{value:''}).value.toLowerCase();
+  var data = f==='all'?BILLS:BILLS.filter(function(b){return b.issues.indexOf(f)>=0;});
+  if(search) data = data.filter(function(b){return b.id.toLowerCase().indexOf(search)>=0||b.vendor.toLowerCase().indexOf(search)>=0;});
+  data = data.filter(function(b){return b.issues.length>0;});
+
+  var label = f==='all'?'All Flagged Bills':ISSUE_LABELS[f]||f;
+  document.getElementById('audit-tbl-title').textContent = label+' — '+data.length;
+  document.getElementById('audit-pager').textContent = 'Showing 1–'+Math.min(25,data.length)+' of '+data.length;
+
+  var html = data.map(function(b,i){
+    var cls = b.score<65?' class="flag-row"':'';
+    return '<tr'+cls+'>'
+      +'<td class="left" style="color:var(--muted);font-size:11px">'+(i+1)+'</td>'
+      +'<td class="left" style="font-weight:600;color:#0066cc">'+b.id+'</td>'
+      +'<td class="left">'+b.vendor+'</td>'
+      +'<td class="left" style="color:var(--muted)">'+b.date+'</td>'
+      +'<td class="left"><span class="tag tag-gray">'+b.journal+'</span></td>'
+      +'<td style="font-weight:600">'+pINR(b.amt)+'</td>'
+      +'<td class="left">'+renderTags(b.issues)+'</td>'
+      +'<td>'+renderScoreBar(b.score)+'</td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('audit-body').innerHTML = html||'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">No bills match this filter</td></tr>';
+}
+
+// ── ATTACHMENT TABLE ──
+function renderAttachment(){
+  var data = BILLS.filter(function(b){return b.issues.indexOf('attachment')>=0;});
+  var html = data.map(function(b,i){
+    return '<tr class="flag-row">'
+      +'<td class="left" style="color:var(--muted);font-size:11px">'+(i+1)+'</td>'
+      +'<td class="left" style="font-weight:600;color:#0066cc">'+b.id+'</td>'
+      +'<td class="left">'+b.vendor+'</td>'
+      +'<td class="left" style="color:var(--muted)">'+b.date+'</td>'
+      +'<td class="left"><span class="tag tag-gray">'+b.journal+'</span></td>'
+      +'<td style="font-weight:600">'+pINR(b.amt)+'</td>'
+      +'<td class="left"><span class="tag tag-err">No Attachment</span></td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('att-body').innerHTML = html;
+  var total = data.reduce(function(s,b){return s+b.amt;},0);
+  document.getElementById('att-sub').textContent = data.length+' bills · '+pINR(total)+' total value';
+}
+
+// ── NARRATION TABLE ──
+var NAR_DATA = [
+  {id:'BHR/2024/3220',vendor:'Kapoor & Sons',date:'07/03/2026',amt:45000,nar:'',issue:'Completely empty'},
+  {id:'BHR/2024/3301',vendor:'Kumar Agencies',date:'25/03/2026',amt:22300,nar:'misc',issue:'Too short (4 chars)'},
+  {id:'BHR/2024/3310',vendor:'National Traders',date:'26/03/2026',amt:88000,nar:'',issue:'Completely empty'},
+  {id:'BHR/2024/3321',vendor:'City Hardware',date:'28/03/2026',amt:4600,nar:'ok',issue:'Too short (2 chars)'},
+  {id:'BHR/2024/3360',vendor:'Sunrise Enterprises',date:'05/04/2026',amt:27800,nar:'',issue:'Completely empty'},
+  {id:'BHR/2024/3278',vendor:'Singh Furnishers',date:'20/03/2026',amt:14750,nar:'bill',issue:'Too short (4 chars)'},
+  {id:'BHR/2024/3290',vendor:'Patel Enterprises',date:'23/03/2026',amt:5100,nar:'',issue:'Completely empty'},
+  {id:'BHR/2024/3288',vendor:'SK COMPUTEC SYSTEMS',date:'03/04/2026',amt:2596,nar:'Hp 250 G8 Screen Panel with Bazal Replace for Rohit Ji\'s laptop',issue:'Typo: "Bazal" → "Bezel"'},
+  {id:'BHR/2024/3235',vendor:'Delhi Supplies Co',date:'10/03/2026',amt:3200,nar:'inv',issue:'Too short (3 chars)'},
+];
+function renderNarration(){
+  var html = NAR_DATA.map(function(b,i){
+    var narDisplay = b.nar?('<span style="font-style:italic;color:var(--muted)">'+b.nar+'</span>'):'<span style="color:var(--light)">— empty —</span>';
+    var issueTag = b.issue.indexOf('empty')>=0?'<span class="tag tag-err">Empty</span>':b.issue.indexOf('Typo')>=0?'<span class="tag tag-warn">Typo</span>':'<span class="tag tag-warn">Too Short</span>';
+    return '<tr>'
+      +'<td class="left" style="color:var(--muted);font-size:11px">'+(i+1)+'</td>'
+      +'<td class="left" style="font-weight:600;color:#0066cc">'+b.id+'</td>'
+      +'<td class="left">'+b.vendor+'</td>'
+      +'<td class="left" style="color:var(--muted)">'+b.date+'</td>'
+      +'<td>'+pINR(b.amt)+'</td>'
+      +'<td class="left" style="max-width:200px">'+narDisplay+'</td>'
+      +'<td class="left">'+issueTag+' <span style="font-size:11px;color:var(--muted)">'+b.issue+'</span></td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('nar-body').innerHTML = html;
+}
+
+// ── ACCOUNT TABLE ──
+var ACC_DATA = [
+  {id:'BHR/2024/3262',vendor:'Verma Plastics',date:'16/03/2026',amt:6500,used:'400012 Purchase',expected:'500010 Raw Material',pct:'12%'},
+  {id:'BHR/2024/3290',vendor:'Patel Enterprises',date:'23/03/2026',amt:5100,used:'600040 Misc Exp',expected:'410012 Computer',pct:'8%'},
+  {id:'BHR/2024/3330',vendor:'Tech Solutions Ltd',date:'29/03/2026',amt:67000,used:'400001 Purchase',expected:'410012 Computer',pct:'0%'},
+  {id:'BHR/2024/3340',vendor:'Office Needs India',date:'01/04/2026',amt:9200,used:'600040 Misc Exp',expected:'410020 Office Supply',pct:'15%'},
+  {id:'BHR/2024/3370',vendor:'Ram Kumar & Co',date:'06/04/2026',amt:18200,used:'400012 Purchase',expected:'500001 Raw Material',pct:'20%'},
+  {id:'BHR/2024/3375',vendor:'Excel Computers',date:'07/04/2026',amt:52000,used:'600010 Exp',expected:'410012 Computer',pct:'5%'},
+  {id:'BHR/2024/3241',vendor:'Mehta Hardware',date:'12/03/2026',amt:18600,used:'600040 Misc',expected:'500010 Hardware',pct:'18%'},
+];
+var ACC_MAP = [
+  {vendor:'Verma Plastics',expected:'500010 Raw Material',bills:12,pct:'88%',last:'Jan 2026'},
+  {vendor:'Patel Enterprises',expected:'410012 Computer Exp',bills:8,pct:'75%',last:'Feb 2026'},
+  {vendor:'Tech Solutions Ltd',expected:'410012 Computer Exp',bills:15,pct:'93%',last:'Mar 2026'},
+  {vendor:'Office Needs India',expected:'410020 Office Supply',bills:6,pct:'83%',last:'Feb 2026'},
+  {vendor:'Mehta Hardware',expected:'500010 Hardware',bills:10,pct:'80%',last:'Mar 2026'},
+];
+function renderAccount(){
+  var html = ACC_DATA.map(function(b,i){
+    return '<tr class="flag-row">'
+      +'<td class="left" style="color:var(--muted);font-size:11px">'+(i+1)+'</td>'
+      +'<td class="left" style="font-weight:600;color:#0066cc">'+b.id+'</td>'
+      +'<td class="left">'+b.vendor+'</td>'
+      +'<td class="left" style="color:var(--muted)">'+b.date+'</td>'
+      +'<td>'+pINR(b.amt)+'</td>'
+      +'<td class="left"><span class="tag tag-err">'+b.used+'</span></td>'
+      +'<td class="left"><span class="tag tag-ok">'+b.expected+'</span></td>'
+      +'<td style="color:var(--red);font-weight:600">'+b.pct+' match</td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('acc-body').innerHTML = html;
+  var mhtml = ACC_MAP.map(function(r){
+    return '<tr>'
+      +'<td class="left" style="font-weight:600">'+r.vendor+'</td>'
+      +'<td class="left"><span class="tag tag-info">'+r.expected+'</span></td>'
+      +'<td>'+r.bills+'</td>'
+      +'<td style="color:var(--green);font-weight:600">'+r.pct+'</td>'
+      +'<td class="left" style="color:var(--muted)">'+r.last+'</td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('acc-map-body').innerHTML = mhtml;
+}
+
+// ── TDS TABLE ──
+var TDS_DATA = [
+  {id:'BHR/2024/3345',vendor:'Prime Vendors Pvt',date:'02/04/2026',amt:41500,type:'Wrong Rate',applied:'194C @ 1%',expected:'194C @ 2%',tds:415,exp_tds:830},
+  {id:'BHR/2024/3241',vendor:'Mehta Hardware',date:'12/03/2026',amt:18600,type:'Wrong Rate',applied:'194C @ 1%',expected:'194J @ 10%',tds:186,exp_tds:1860},
+  {id:'BHR/2024/3355',vendor:'Alpha Traders',date:'04/04/2026',amt:33000,type:'Wrong Rate',applied:'194C @ 2%',expected:'194J @ 10%',tds:660,exp_tds:3300},
+  {id:'BHR/2024/3375',vendor:'Excel Computers',date:'07/04/2026',amt:52000,type:'Wrong Rate',applied:'194C @ 1%',expected:'194J @ 10%',tds:520,exp_tds:5200},
+  {id:'BHR/2024/3201',vendor:'Ravi Traders',date:'01/03/2026',amt:12400,type:'TDS Missing',applied:'—',expected:'194C @ 1%',tds:0,exp_tds:124},
+  {id:'BHR/2024/3278',vendor:'Singh Furnishers',date:'20/03/2026',amt:14750,type:'TDS Missing',applied:'—',expected:'194C @ 2%',tds:0,exp_tds:295},
+  {id:'BHR/2024/3310',vendor:'National Traders',date:'26/03/2026',amt:88000,type:'TDS Missing',applied:'—',expected:'194J @ 10%',tds:0,exp_tds:8800},
+  {id:'BHR/2024/3350',vendor:'Star Supplies Co',date:'03/04/2026',amt:15600,type:'TDS Missing',applied:'—',expected:'194C @ 1%',tds:0,exp_tds:156},
+  {id:'BHR/2024/3360',vendor:'Sunrise Enterprises',date:'05/04/2026',amt:27800,type:'TDS Missing',applied:'—',expected:'194J @ 10%',tds:0,exp_tds:2780},
+  {id:'BHR/2024/3220',vendor:'Kapoor & Sons',date:'07/03/2026',amt:45000,type:'Wrong Rate',applied:'194C @ 1%',expected:'194J @ 10%',tds:450,exp_tds:4500},
+  {id:'BHR/2024/3255',vendor:'Gupta Tech Solutions',date:'14/03/2026',amt:92000,type:'Wrong Rate',applied:'194C @ 2%',expected:'194J @ 10%',tds:1840,exp_tds:9200},
+  {id:'BHR/2024/3385',vendor:'Spectrum Agencies',date:'09/04/2026',amt:39500,type:'TDS Missing',applied:'—',expected:'194C @ 2%',tds:0,exp_tds:790},
+  {id:'BHR/2024/3282',vendor:'Agarwal Services',date:'22/03/2026',amt:7800,type:'TDS Missing',applied:'—',expected:'194C @ 1%',tds:0,exp_tds:78},
+];
+function renderTDS(){
+  var html = TDS_DATA.map(function(b,i){
+    var typetag = b.type==='TDS Missing'?'<span class="tag tag-err">TDS Missing</span>':'<span class="tag tag-warn">Wrong Rate</span>';
+    return '<tr'+(b.type==='TDS Missing'?' class="flag-row"':'')+'>'
+      +'<td class="left" style="color:var(--muted);font-size:11px">'+(i+1)+'</td>'
+      +'<td class="left" style="font-weight:600;color:#0066cc">'+b.id+'</td>'
+      +'<td class="left">'+b.vendor+'</td>'
+      +'<td class="left" style="color:var(--muted)">'+b.date+'</td>'
+      +'<td>'+pINR(b.amt)+'</td>'
+      +'<td class="left">'+typetag+'</td>'
+      +'<td class="left"><span class="tag '+(b.applied==='—'?'tag-err':'tag-warn')+'">'+b.applied+'</span></td>'
+      +'<td class="left"><span class="tag tag-ok">'+b.expected+'</span></td>'
+      +'<td style="color:'+(b.tds===0?'var(--red)':'var(--muted)')+'">'+pINR(b.tds)+'</td>'
+      +'<td style="font-weight:600">'+pINR(b.exp_tds)+'</td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('tds-body').innerHTML = html;
+}
+
+// ── GST TABLE ──
+var GST_DATA = [
+  {id:'BHR/2024/3255',vendor:'Gupta Tech Solutions',state:'Delhi (07)',pos:'Haryana (06)',amt:92000,applied:'IGST 18%',expected:'SGST+CGST 18%',impact:'ITC block risk'},
+  {id:'BHR/2024/3330',vendor:'Tech Solutions Ltd',state:'Haryana (06)',pos:'Delhi (07)',amt:67000,applied:'SGST+CGST 18%',expected:'IGST 18%',impact:'ITC block risk'},
+  {id:'BHR/2024/3355',vendor:'Alpha Traders',state:'Delhi (07)',pos:'Delhi (07)',amt:33000,applied:'IGST 18%',expected:'SGST+CGST 18%',impact:'Incorrect split'},
+  {id:'BHR/2024/3375',vendor:'Excel Computers',state:'Haryana (06)',pos:'Maharashtra (27)',amt:52000,applied:'SGST+CGST 18%',expected:'IGST 18%',impact:'ITC mismatch'},
+  {id:'BHR/2024/3241',vendor:'Mehta Hardware',state:'Rajasthan (08)',pos:'Haryana (06)',amt:18600,applied:'SGST+CGST 18%',expected:'IGST 18%',impact:'ITC block risk'},
+];
+function renderGST(){
+  var html = GST_DATA.map(function(b,i){
+    return '<tr class="flag-row">'
+      +'<td class="left" style="color:var(--muted);font-size:11px">'+(i+1)+'</td>'
+      +'<td class="left" style="font-weight:600;color:#0066cc">'+b.id+'</td>'
+      +'<td class="left">'+b.vendor+'</td>'
+      +'<td class="left"><span class="tag tag-gray">'+b.state+'</span></td>'
+      +'<td class="left"><span class="tag tag-info">'+b.pos+'</span></td>'
+      +'<td>'+pINR(b.amt)+'</td>'
+      +'<td class="left"><span class="tag tag-err">'+b.applied+'</span></td>'
+      +'<td class="left"><span class="tag tag-ok">'+b.expected+'</span></td>'
+      +'<td class="left"><span class="tag tag-warn">'+b.impact+'</span></td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('gst-body').innerHTML = html;
+}
+
+// ── TAB SWITCHING ──
+var ALL_TABS = ['dashboard','audit','attachment','narration','account','tds','gst','reports','settings'];
+function switchTab(t){
+  ALL_TABS.forEach(function(id){
+    var page = document.getElementById('page-'+id);
+    var ni = document.getElementById('ni-'+id);
+    if(page) page.className = id===t?'page active':'page';
+    if(ni) ni.className = id===t?'ni active':'ni';
+  });
+  document.querySelectorAll('.dtab').forEach(function(el){el.classList.remove('active');});
+  var dtabs = document.querySelectorAll('.dtab');
+  var tabMap = {'dashboard':0,'audit':1,'attachment':2,'narration':3,'account':4,'tds':5,'gst':6,'reports':7};
+  if(tabMap[t]!==undefined && dtabs[tabMap[t]]) dtabs[tabMap[t]].classList.add('active');
+}
+
+// ── RUN SCAN ──
+function runFullScan(){
+  var wrap = document.getElementById('prog-wrap');
+  if(wrap) wrap.style.display='block';
+  switchTab('audit');
+  var steps = [
+    [8,'Connecting to Odoo XML-RPC...','Authenticating with ginesys.odoo.com'],
+    [20,'Fetching vendor bills...','Pulling account.move records'],
+    [35,'Checking attachments...','Querying ir.attachment model'],
+    [48,'Checking narration fields...','Validating ref and narration'],
+    [60,'Analysing account patterns...','Learning vendor→account mapping'],
+    [72,'Checking TDS entries...','Comparing 194C/194J/194I rates'],
+    [84,'Validating GST treatment...','Checking GSTIN vs place of supply'],
+    [92,'Detecting duplicates...','Cross-referencing vendor+amount+date'],
+    [100,'Scan complete!','80 bills reviewed — 41 flagged']
+  ];
+  var i=0;
+  var iv = setInterval(function(){
+    if(i>=steps.length){
+      clearInterval(iv);
+      setTimeout(function(){
+        if(wrap) wrap.style.display='none';
+        document.getElementById('dash-ok-box').style.display='block';
+        toast('Scan complete — 41 bills flagged','✅');
+        document.getElementById('sb-scan').textContent='Last scan: Just now — 80 bills';
+      },600);
+      return;
+    }
+    document.getElementById('prog-fill').style.width=steps[i][0]+'%';
+    document.getElementById('prog-step').textContent=steps[i][1];
+    document.getElementById('prog-sub').textContent=steps[i][2];
+    document.getElementById('prog-pct').textContent=steps[i][0]+'%';
+    i++;
+  },420);
+}
+
+// ── EXPORT ──
+function exportCSV(){
+  var rows = [['Bill No','Vendor','Date','Journal','Amount','Issues','Score']];
+  BILLS.filter(function(b){return b.issues.length>0;}).forEach(function(b){
+    rows.push([b.id,'"'+b.vendor+'"',b.date,b.journal,b.amt,'"'+b.issues.join(', ')+'"',b.score]);
+  });
+  var csv='\uFEFF'+rows.map(function(r){return r.join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='Odoo_Bill_Audit_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  toast('CSV exported successfully','✅');
+}
+
+// ── TOAST ──
+function toast(msg,icon){
+  var el=document.getElementById('toast');
+  el.innerHTML=(icon||'')+(icon?' ':'')+msg;
+  el.style.display='flex';
+  clearTimeout(el._t);
+  el._t=setTimeout(function(){el.style.display='none';},2800);
+}
+
+// ── DASHBOARD PERIOD UPDATE ──
+function updateDashPeriod(){
+  var v = document.getElementById('dash-period').value;
+  var t = v.includes('FY')?245:v.includes('180')?160:v.includes('90')?80:35;
+  var crit=Math.round(t*.28), warn=Math.round(t*.22), clean=t-crit-warn;
+  document.getElementById('d-total').textContent=t;
+  document.getElementById('d-crit').textContent=crit;
+  document.getElementById('d-warn').textContent=warn;
+  document.getElementById('d-clean').textContent=clean;
+  var att=Math.round(t*.175),nar=Math.round(t*.11),acc=Math.round(t*.09),wtds=Math.round(t*.075),ntds=Math.round(t*.09),gst=Math.round(t*.06);
+  document.getElementById('ic-att').textContent=att; document.getElementById('ip-att').textContent=Math.round(att/t*100)+'%';
+  document.getElementById('ic-nar').textContent=nar; document.getElementById('ip-nar').textContent=Math.round(nar/t*100)+'%';
+  document.getElementById('ic-acc').textContent=acc; document.getElementById('ip-acc').textContent=Math.round(acc/t*100)+'%';
+  document.getElementById('ic-wtds').textContent=wtds; document.getElementById('ip-wtds').textContent=Math.round(wtds/t*100)+'%';
+  document.getElementById('ic-ntds').textContent=ntds; document.getElementById('ip-ntds').textContent=Math.round(ntds/t*100)+'%';
+  document.getElementById('ic-gst').textContent=gst; document.getElementById('ip-gst').textContent=Math.round(gst/t*100)+'%';
+  ['badge-att','sn-att'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent=att;});
+  ['badge-nar','sn-nar'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent=nar;});
+  ['badge-acc','sn-acc'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent=acc;});
+  var tds=wtds+ntds;
+  ['badge-tds','sn-tds'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent=tds;});
+  ['badge-gst','sn-gst'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent=gst;});
+  document.getElementById('badge-audit').textContent=crit;
+  toast('Period updated — '+t+' bills loaded','📅');
+}
+
+// ══════════════════════════════════════════
+// FIREBASE INTEGRATION
+// ══════════════════════════════════════════
+var db = null;
+var fbApp = null;
+
+function initFirebase() {
+  var cfg = {
+    apiKey:        document.getElementById('fb-apiKey').value.trim(),
+    projectId:     document.getElementById('fb-projectId').value.trim(),
+    authDomain:    document.getElementById('fb-authDomain').value.trim(),
+    appId:         document.getElementById('fb-appId').value.trim()
+  };
+  if (!cfg.apiKey || !cfg.projectId) {
+    toast('Please fill in API Key and Project ID', '⚠️');
+    return;
+  }
+  try {
+    // Delete existing app if any
+    if (fbApp) { fbApp.delete(); fbApp = null; }
+    fbApp = firebase.initializeApp(cfg, 'odoo-audit-' + Date.now());
+    db = fbApp.firestore();
+    // Persist config to localStorage for auto-reload
+    localStorage.setItem('fb_config', JSON.stringify(cfg));
+    document.getElementById('fb-status').className = 'ok-box';
+    document.getElementById('fb-status').textContent = '✅ Firebase connected — Project: ' + cfg.projectId;
+    document.getElementById('fb-conn-info').textContent = 'Connected to ' + cfg.projectId;
+    toast('Firebase connected! ☁️', '🔥');
+    loadSettingsFromFirebase();
+    loadLastScanFromFirebase();
+  } catch(e) {
+    toast('Firebase error: ' + e.message, '❌');
+    document.getElementById('fb-status').className = 'warn-box';
+    document.getElementById('fb-status').textContent = '❌ Firebase error: ' + e.message;
+  }
+}
+
+function autoInitFirebase() {
+  var saved = localStorage.getItem('fb_config');
+  if (!saved) return;
+  try {
+    var cfg = JSON.parse(saved);
+    if (!cfg.apiKey || !cfg.projectId) return;
+    document.getElementById('fb-apiKey').value    = cfg.apiKey;
+    document.getElementById('fb-projectId').value = cfg.projectId;
+    document.getElementById('fb-authDomain').value = cfg.authDomain || '';
+    document.getElementById('fb-appId').value      = cfg.appId || '';
+    initFirebase();
+  } catch(e) { /* ignore */ }
+}
+
+// ── SAVE SCAN RESULTS ──
+function saveScanToFirebase() {
+  if (!db) return;
+  var flagged = BILLS.filter(function(b){return b.issues.length>0;});
+  var total = BILLS.length;
+  var avgScore = Math.round(BILLS.reduce(function(s,b){return s+b.score;},0) / BILLS.length);
+  var payload = {
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    scanDate:  new Date().toISOString(),
+    summary: {
+      total:    total,
+      flagged:  flagged.length,
+      clean:    total - flagged.length,
+      avgScore: avgScore
+    },
+    bills: BILLS
+  };
+  db.collection('scanResults').add(payload)
+    .then(function(ref) {
+      toast('Scan saved to Firebase ☁️ (ID: ' + ref.id.slice(0,8) + '...)', '✅');
+      document.getElementById('sb-scan').textContent =
+        'Last scan: Just now — ' + total + ' bills (saved to cloud)';
+    })
+    .catch(function(e) { toast('Save failed: ' + e.message, '❌'); });
+}
+
+// ── LOAD LAST SCAN ──
+function loadLastScanFromFirebase() {
+  if (!db) return;
+  db.collection('scanResults')
+    .orderBy('timestamp', 'desc')
+    .limit(1)
+    .get()
+    .then(function(snap) {
+      if (snap.empty) return;
+      var data = snap.docs[0].data();
+      if (data.bills && Array.isArray(data.bills)) {
+        BILLS = data.bills;
+        renderDashBills();
+        filterAudit('all');
+        renderAttachment();
+        renderNarration();
+        renderAccount();
+        renderTDS();
+        renderGST();
+        var d = data.scanDate ? new Date(data.scanDate).toLocaleString('en-IN') : 'cloud';
+        document.getElementById('sb-scan').textContent =
+          'Last scan: ' + d + ' — ' + data.bills.length + ' bills (from cloud)';
+        toast('Loaded last scan from Firebase ☁️', '📥');
+      }
+    })
+    .catch(function(e) { console.warn('loadLastScan:', e.message); });
+}
+
+// ── SAVE / LOAD SETTINGS ──
+function saveSettings() {
+  var settings = {
+    odooUrl:  document.getElementById('s-url').value,
+    odooDb:   document.getElementById('s-db').value,
+    odooUser: document.getElementById('s-user').value,
+    updatedAt: new Date().toISOString()
+  };
+  // Always save to localStorage
+  localStorage.setItem('odoo_settings', JSON.stringify(settings));
+  if (db) {
+    db.collection('config').doc('odoo').set(settings)
+      .then(function() { toast('Settings saved to Firebase ☁️', '💾'); })
+      .catch(function(e) { toast('Local save OK, Firebase failed: ' + e.message, '⚠️'); });
+  } else {
+    toast('Settings saved locally (Firebase not connected)', '💾');
+  }
+  document.getElementById('settings-saved-info').textContent =
+    'Saved at ' + new Date().toLocaleTimeString('en-IN');
+}
+
+function saveRules() {
+  var rules = {
+    minNarLen:    document.getElementById('r-nar-len').value,
+    accThreshold: document.getElementById('r-acc-thresh').value,
+    tdsThreshold: document.getElementById('r-tds-thresh').value,
+    dupDays:      document.getElementById('r-dup-days').value,
+    updatedAt:    new Date().toISOString()
+  };
+  localStorage.setItem('audit_rules', JSON.stringify(rules));
+  if (db) {
+    db.collection('config').doc('rules').set(rules)
+      .then(function() { toast('Rules saved to Firebase ☁️', '💾'); })
+      .catch(function(e) { toast('Local save OK, Firebase failed: ' + e.message, '⚠️'); });
+  } else {
+    toast('Rules saved locally (Firebase not connected)', '💾');
+  }
+}
+
+function resetRules() {
+  document.getElementById('r-nar-len').value    = 5;
+  document.getElementById('r-acc-thresh').value = 70;
+  document.getElementById('r-tds-thresh').value = 30000;
+  document.getElementById('r-dup-days').value   = 30;
+  toast('Rules reset to defaults', '🔄');
+}
+
+function loadSettingsFromFirebase() {
+  if (!db) return;
+  db.collection('config').doc('odoo').get().then(function(doc) {
+    if (!doc.exists) return;
+    var s = doc.data();
+    if (s.odooUrl)  document.getElementById('s-url').value  = s.odooUrl;
+    if (s.odooDb)   document.getElementById('s-db').value   = s.odooDb;
+    if (s.odooUser) document.getElementById('s-user').value = s.odooUser;
+  }).catch(function(){});
+
+  db.collection('config').doc('rules').get().then(function(doc) {
+    if (!doc.exists) return;
+    var r = doc.data();
+    if (r.minNarLen)    document.getElementById('r-nar-len').value    = r.minNarLen;
+    if (r.accThreshold) document.getElementById('r-acc-thresh').value = r.accThreshold;
+    if (r.tdsThreshold) document.getElementById('r-tds-thresh').value = r.tdsThreshold;
+    if (r.dupDays)      document.getElementById('r-dup-days').value   = r.dupDays;
+  }).catch(function(){});
+}
+
+// ── PATCH runFullScan TO ALSO SAVE ──
+var _origRunFullScan = runFullScan;
+runFullScan = function() {
+  _origRunFullScan();
+  // Save to Firebase after scan completes (approx total delay)
+  setTimeout(function() { saveScanToFirebase(); }, 420 * 9 + 1200);
+};
+
+// ── INIT ──
+renderDashBills();
+filterAudit('all');
+renderAttachment();
+renderNarration();
+renderAccount();
+renderTDS();
+renderGST();
+
+// Auto-reconnect Firebase if credentials were saved previously
+setTimeout(autoInitFirebase, 300);
+</script>
+</body>
+</html>

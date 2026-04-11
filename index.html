@@ -682,15 +682,19 @@ tr.flag-row td{background:#fff8f8}
     <div class="sync-panel">
       <div class="sync-title">🔗 Odoo Connection</div>
       <div class="sync-grid">
-        <div class="fg"><span class="flabel">Odoo URL</span><input class="finput" value="https://ginesys.odoo.com" id="s-url"/></div>
-        <div class="fg"><span class="flabel">Database</span><input class="finput" value="ginesys" id="s-db"/></div>
-        <div class="fg"><span class="flabel">Username</span><input class="finput" value="admin" id="s-user"/></div>
-        <div class="fg"><span class="flabel">Password / API Key</span><input class="finput" type="password" value="••••••••••" id="s-pass"/></div>
+        <div class="fg"><span class="flabel">Odoo URL</span><input class="finput" placeholder="https://yourcompany.odoo.com" id="s-url"/></div>
+        <div class="fg"><span class="flabel">Database</span><input class="finput" placeholder="yourdb" id="s-db"/></div>
+        <div class="fg"><span class="flabel">Username / Email</span><input class="finput" placeholder="admin@yourcompany.com" id="s-user"/></div>
+        <div class="fg"><span class="flabel">Password / API Key</span><input class="finput" type="password" placeholder="••••••••" id="s-pass"/></div>
+      </div>
+      <div style="margin-bottom:10px">
+        <span class="flabel">CORS Proxy URL <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--light)">(leave blank if Odoo allows browser requests, e.g. self-hosted)</span></span>
+        <input class="finput" placeholder="https://my-proxy.render.com (optional — needed for odoo.com SaaS)" id="s-proxy" style="width:100%"/>
       </div>
       <div class="sync-actions">
-        <button class="btn btn-primary" onclick="toast('Connection tested — Odoo reachable ✅','✅')">Test Connection</button>
+        <button class="btn btn-primary" id="btn-test-conn" onclick="testConnection(this)">Test Connection</button>
         <button class="btn btn-default" onclick="saveSettings()">Save Settings</button>
-        <span class="sync-info" id="settings-saved-info">Last connected: Today 21:16 — ginesys.odoo.com</span>
+        <span class="sync-info" id="settings-saved-info">Enter credentials above and test connection</span>
       </div>
     </div>
     <div class="sync-panel">
@@ -802,10 +806,6 @@ function renderScoreBar(s){
   return '<div class="score-bar"><div class="sbar-track"><div class="sbar-fill" style="width:'+s+'%;background:'+c+'"></div></div><span style="font-size:11px;font-weight:600;color:'+c+'">'+s+'</span></div>';
 }
 
-function openBill(id){
-  toast('Opening '+id+' in Odoo...','🔗');
-}
-
 // ── DASHBOARD TABLE ──
 function renderDashBills(){
   var flagged = BILLS.filter(function(b){return b.issues.length>0;}).sort(function(a,b){return a.score-b.score;}).slice(0,10);
@@ -819,7 +819,7 @@ function renderDashBills(){
       +'<td style="text-align:right;font-weight:600">'+pINR(b.amt)+'</td>'
       +'<td class="left">'+renderTags(b.issues)+'</td>'
       +'<td style="text-align:right">'+renderScoreBar(b.score)+'</td>'
-      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\','+b._odooId+')">↗</button></td>'
       +'</tr>';
   }).join('');
   document.getElementById('dash-bills-body').innerHTML = html;
@@ -855,7 +855,7 @@ function filterAudit(f){
       +'<td style="font-weight:600">'+pINR(b.amt)+'</td>'
       +'<td class="left">'+renderTags(b.issues)+'</td>'
       +'<td>'+renderScoreBar(b.score)+'</td>'
-      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\','+b._odooId+')">↗</button></td>'
       +'</tr>';
   }).join('');
   document.getElementById('audit-body').innerHTML = html||'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">No bills match this filter</td></tr>';
@@ -873,7 +873,7 @@ function renderAttachment(){
       +'<td class="left"><span class="tag tag-gray">'+b.journal+'</span></td>'
       +'<td style="font-weight:600">'+pINR(b.amt)+'</td>'
       +'<td class="left"><span class="tag tag-err">No Attachment</span></td>'
-      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\','+b._odooId+')">↗</button></td>'
       +'</tr>';
   }).join('');
   document.getElementById('att-body').innerHTML = html;
@@ -894,7 +894,20 @@ var NAR_DATA = [
   {id:'BHR/2024/3235',vendor:'Delhi Supplies Co',date:'10/03/2026',amt:3200,nar:'inv',issue:'Too short (3 chars)'},
 ];
 function renderNarration(){
-  var html = NAR_DATA.map(function(b,i){
+  // After a real scan, derive from BILLS; fall back to static demo data
+  var minNar = parseInt(document.getElementById('r-nar-len').value) || 5;
+  var hasScanData = BILLS.length > 0 && BILLS[0]._odooId;
+  var data;
+  if (hasScanData) {
+    data = BILLS.filter(function(b){ return b.issues.indexOf('narration')>=0; }).map(function(b){
+      var nar = (b.narration||'').trim();
+      var issue = nar.length===0 ? 'Completely empty' : 'Too short ('+nar.length+' chars)';
+      return { id:b.id, _odooId:b._odooId, vendor:b.vendor, date:b.date, amt:b.amt, nar:nar, issue:issue };
+    });
+  } else {
+    data = NAR_DATA;
+  }
+  var html = data.map(function(b,i){
     var narDisplay = b.nar?('<span style="font-style:italic;color:var(--muted)">'+b.nar+'</span>'):'<span style="color:var(--light)">— empty —</span>';
     var issueTag = b.issue.indexOf('empty')>=0?'<span class="tag tag-err">Empty</span>':b.issue.indexOf('Typo')>=0?'<span class="tag tag-warn">Typo</span>':'<span class="tag tag-warn">Too Short</span>';
     return '<tr>'
@@ -905,7 +918,7 @@ function renderNarration(){
       +'<td>'+pINR(b.amt)+'</td>'
       +'<td class="left" style="max-width:200px">'+narDisplay+'</td>'
       +'<td class="left">'+issueTag+' <span style="font-size:11px;color:var(--muted)">'+b.issue+'</span></td>'
-      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\','+(b._odooId||'undefined')+')">↗</button></td>'
       +'</tr>';
   }).join('');
   document.getElementById('nar-body').innerHTML = html;
@@ -1032,40 +1045,337 @@ function switchTab(t){
   if(tabMap[t]!==undefined && dtabs[tabMap[t]]) dtabs[tabMap[t]].classList.add('active');
 }
 
-// ── RUN SCAN ──
-function runFullScan(){
-  var wrap = document.getElementById('prog-wrap');
-  if(wrap) wrap.style.display='block';
-  switchTab('audit');
-  var steps = [
-    [8,'Connecting to Odoo XML-RPC...','Authenticating with ginesys.odoo.com'],
-    [20,'Fetching vendor bills...','Pulling account.move records'],
-    [35,'Checking attachments...','Querying ir.attachment model'],
-    [48,'Checking narration fields...','Validating ref and narration'],
-    [60,'Analysing account patterns...','Learning vendor→account mapping'],
-    [72,'Checking TDS entries...','Comparing 194C/194J/194I rates'],
-    [84,'Validating GST treatment...','Checking GSTIN vs place of supply'],
-    [92,'Detecting duplicates...','Cross-referencing vendor+amount+date'],
-    [100,'Scan complete!','80 bills reviewed — 41 flagged']
-  ];
-  var i=0;
-  var iv = setInterval(function(){
-    if(i>=steps.length){
-      clearInterval(iv);
-      setTimeout(function(){
-        if(wrap) wrap.style.display='none';
-        document.getElementById('dash-ok-box').style.display='block';
-        toast('Scan complete — 41 bills flagged','✅');
-        document.getElementById('sb-scan').textContent='Last scan: Just now — 80 bills';
-      },600);
-      return;
+// ── ODOO SETTINGS HELPERS ──
+function getOdooSettings() {
+  return {
+    url:   (document.getElementById('s-url').value   || '').trim().replace(/\/+$/, ''),
+    db:    (document.getElementById('s-db').value    || '').trim(),
+    user:  (document.getElementById('s-user').value  || '').trim(),
+    pass:  (document.getElementById('s-pass').value  || '').trim(),
+    proxy: (document.getElementById('s-proxy').value || '').trim().replace(/\/+$/, '')
+  };
+}
+
+function loadSettingsLocally() {
+  try {
+    var s = JSON.parse(localStorage.getItem('odoo_settings') || '{}');
+    if (s.odooUrl)   document.getElementById('s-url').value   = s.odooUrl;
+    if (s.odooDb)    document.getElementById('s-db').value    = s.odooDb;
+    if (s.odooUser)  document.getElementById('s-user').value  = s.odooUser;
+    if (s.odooProxy) document.getElementById('s-proxy').value = s.odooProxy;
+    var p = localStorage.getItem('odoo_pass');
+    if (p) document.getElementById('s-pass').value = p;
+  } catch(e) {}
+}
+
+// ── ODOO JSON-RPC CORE ──
+var odooSession = null;
+
+async function odooRpc(path, params) {
+  var s = getOdooSettings();
+  if (!s.url) throw new Error('Odoo URL is not configured — open Settings and enter your Odoo URL.');
+  // If a proxy is configured, rewrite the target URL through it
+  var target = s.proxy ? s.proxy + '/' + s.url.replace(/^https?:\/\//, '') : s.url;
+  var resp = await fetch(target + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',   // send/receive session cookies (works on both direct and proxy)
+    body: JSON.stringify({ jsonrpc: '2.0', method: 'call', id: Date.now(), params: params })
+  });
+  if (!resp.ok) throw new Error('HTTP ' + resp.status + ' from Odoo — check URL/proxy');
+  var data = await resp.json();
+  if (data.error) {
+    var msg = (data.error.data && data.error.data.message) || data.error.message || 'RPC error';
+    throw new Error(msg);
+  }
+  return data.result;
+}
+
+async function odooAuthenticate() {
+  var s = getOdooSettings();
+  if (!s.db || !s.user || !s.pass) throw new Error('Database, username and password are required.');
+  var result = await odooRpc('/web/session/authenticate', { db: s.db, login: s.user, password: s.pass });
+  if (!result || !result.uid) throw new Error('Authentication failed — invalid credentials or database name.');
+  odooSession = result;
+  return result;
+}
+
+async function odooSearchRead(model, domain, fields, limit, order) {
+  return await odooRpc('/web/dataset/call_kw', {
+    model: model,
+    method: 'search_read',
+    args: [domain],
+    kwargs: {
+      fields: fields,
+      limit: limit || 200,
+      order: order || 'invoice_date desc',
+      context: odooSession ? odooSession.user_context : {}
     }
-    document.getElementById('prog-fill').style.width=steps[i][0]+'%';
-    document.getElementById('prog-step').textContent=steps[i][1];
-    document.getElementById('prog-sub').textContent=steps[i][2];
-    document.getElementById('prog-pct').textContent=steps[i][0]+'%';
-    i++;
-  },420);
+  });
+}
+
+// ── TEST CONNECTION (REAL) ──
+async function testConnection(btn) {
+  btn.disabled = true; btn.textContent = 'Testing…';
+  try {
+    var sess = await odooAuthenticate();
+    var company = sess.company_id ? sess.company_id[1] : '?';
+    document.getElementById('settings-saved-info').textContent = 'Connected as ' + sess.name + ' · ' + company;
+    toast('Odoo connected ✅ — ' + sess.name + ' @ ' + company, '✅');
+  } catch(e) {
+    var hint = '';
+    if (e.message.toLowerCase().includes('failed to fetch') || e.message.toLowerCase().includes('networkerror')) {
+      hint = ' (CORS blocked — add a Proxy URL above)';
+    }
+    document.getElementById('settings-saved-info').textContent = '❌ ' + e.message + hint;
+    toast('Connection failed: ' + e.message + hint, '❌');
+  }
+  btn.disabled = false; btn.textContent = 'Test Connection';
+}
+
+// ── OPEN BILL (REAL) ──
+function openBill(id, odooId) {
+  var s = getOdooSettings();
+  if (odooId && s.url) {
+    window.open(s.url + '/odoo/accounting/vendor-bills/' + odooId, '_blank');
+  } else if (s.url) {
+    // Fallback: search by name
+    window.open(s.url + '/odoo/accounting/vendor-bills?search=' + encodeURIComponent(id), '_blank');
+  } else {
+    toast('Set your Odoo URL in Settings first', '⚠️');
+  }
+}
+
+// ── RUN FULL SCAN (REAL ODOO SYNC) ──
+async function runFullScan() {
+  var wrap = document.getElementById('prog-wrap');
+  if (wrap) wrap.style.display = 'block';
+  switchTab('audit');
+
+  function prog(pct, step, sub) {
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-step').textContent = step;
+    document.getElementById('prog-sub').textContent  = sub;
+    document.getElementById('prog-pct').textContent  = pct + '%';
+  }
+
+  try {
+    var s = getOdooSettings();
+    prog(8, 'Connecting to Odoo…', 'Authenticating with ' + (s.url || 'Odoo'));
+    await odooAuthenticate();
+
+    prog(20, 'Fetching vendor bills…', 'Pulling posted account.move records');
+    var rawBills = await odooSearchRead(
+      'account.move',
+      [['move_type', '=', 'in_invoice'], ['state', '=', 'posted']],
+      ['id','name','partner_id','invoice_date','journal_id','amount_total','narration','ref','invoice_line_ids'],
+      300
+    );
+
+    prog(35, 'Checking attachments…', 'Querying ir.attachment for ' + rawBills.length + ' bills');
+    var billIds = rawBills.map(function(b){ return b.id; });
+    var atts = [];
+    if (billIds.length) {
+      atts = await odooSearchRead(
+        'ir.attachment',
+        [['res_model','=','account.move'],['res_id','in',billIds]],
+        ['res_id'],
+        3000
+      );
+    }
+    var attachedSet = new Set(atts.map(function(a){ return a.res_id; }));
+
+    prog(48, 'Checking narration fields…', 'Validating narration / ref');
+    var minNar = parseInt(document.getElementById('r-nar-len').value) || 5;
+
+    prog(60, 'Analysing account patterns…', 'Learning vendor→account mapping');
+    var lines = [];
+    if (billIds.length) {
+      lines = await odooSearchRead(
+        'account.move.line',
+        [['move_id','in',billIds],['display_type','=','product']],
+        ['move_id','account_id','partner_id'],
+        3000
+      );
+    }
+    // Build: vendor → { accountId: count }
+    var vMap = {};
+    lines.forEach(function(l){
+      var vid = l.partner_id && l.partner_id[0];
+      var aid = l.account_id && l.account_id[0];
+      if (!vid || !aid) return;
+      if (!vMap[vid]) vMap[vid] = {};
+      vMap[vid][aid] = (vMap[vid][aid]||0) + 1;
+    });
+    // Build: move_id → account used
+    var moveAcc = {};
+    lines.forEach(function(l){
+      if (l.account_id) moveAcc[l.move_id[0]] = l.account_id;
+    });
+
+    prog(72, 'Checking TDS entries…', 'Scanning tax lines for 194C/194J/194I');
+    var taxLines = [];
+    if (billIds.length) {
+      taxLines = await odooSearchRead(
+        'account.move.line',
+        [['move_id','in',billIds],['tax_line_id','!=',false]],
+        ['move_id','tax_line_id','balance'],
+        3000
+      );
+    }
+    var taxMap = {};
+    taxLines.forEach(function(tl){
+      var mid = tl.move_id[0];
+      if (!taxMap[mid]) taxMap[mid] = [];
+      taxMap[mid].push(tl);
+    });
+
+    prog(84, 'Validating GST treatment…', 'Checking GSTIN vs place of supply');
+    // GST validation requires fiscal positions / partner GSTIN — flag bills whose
+    // tax lines contain both IGST and SGST/CGST (contradictory treatment).
+    var gstIssueSet = new Set();
+    Object.keys(taxMap).forEach(function(mid){
+      var names = taxMap[mid].map(function(tl){ return (tl.tax_line_id && tl.tax_line_id[1])||''; });
+      var hasIGST = names.some(function(n){ return /igst/i.test(n); });
+      var hasCGST = names.some(function(n){ return /cgst|sgst/i.test(n); });
+      if (hasIGST && hasCGST) gstIssueSet.add(parseInt(mid));
+    });
+
+    prog(92, 'Detecting duplicates…', 'Cross-referencing vendor + amount + date');
+    var tdsThreshold = parseFloat(document.getElementById('r-tds-thresh').value) || 30000;
+    var accThreshold = parseFloat(document.getElementById('r-acc-thresh').value) || 70;
+
+    prog(100, 'Scan complete!', rawBills.length + ' bills reviewed');
+
+    // ── AUDIT EACH BILL ──
+    BILLS = rawBills.map(function(b){
+      var issues = [];
+      var score  = 100;
+
+      // 1. Attachment
+      if (!attachedSet.has(b.id)) { issues.push('attachment'); score -= 20; }
+
+      // 2. Narration
+      var nar = ((b.narration || '') + ' ' + (b.ref || '')).trim();
+      if (nar.replace(/\s+/g,'').length < minNar) { issues.push('narration'); score -= 15; }
+
+      // 3. TDS — basic: if amount ≥ threshold and no tax line at all
+      var billTaxes = taxMap[b.id] || [];
+      if (b.amount_total >= tdsThreshold && billTaxes.length === 0) {
+        issues.push('no-tds'); score -= 20;
+      }
+
+      // 4. Wrong TDS — tax line exists but looks like wrong section
+      // (Simple heuristic: professional services vendor has 194C instead of 194J)
+      if (billTaxes.length > 0) {
+        var taxNames = billTaxes.map(function(t){ return (t.tax_line_id && t.tax_line_id[1])||''; });
+        var has194C  = taxNames.some(function(n){ return /194c/i.test(n); });
+        var has194J  = taxNames.some(function(n){ return /194j/i.test(n); });
+        // If only 194C on amount ≥ 50k (typical 194J threshold), flag
+        if (has194C && !has194J && b.amount_total >= 50000) {
+          issues.push('wrong-tds'); score -= 15;
+        }
+      }
+
+      // 5. Account pattern
+      var vid = b.partner_id && b.partner_id[0];
+      if (vid && vMap[vid] && moveAcc[b.id]) {
+        var usedAcc  = moveAcc[b.id][0];
+        var counts   = vMap[vid];
+        var totalUse = Object.values(counts).reduce(function(a,c){ return a+c; }, 0);
+        var topAcc   = Object.keys(counts).reduce(function(a,k){ return counts[k]>counts[a]?k:a; }, Object.keys(counts)[0]);
+        var pct      = totalUse ? (counts[topAcc] / totalUse * 100) : 0;
+        if (String(usedAcc) !== String(topAcc) && pct >= accThreshold) {
+          issues.push('account'); score -= 15;
+        }
+      }
+
+      // 6. GST mismatch
+      if (gstIssueSet.has(b.id)) { issues.push('gst'); score -= 10; }
+
+      return {
+        id:       b.name,
+        _odooId:  b.id,
+        vendor:   b.partner_id ? b.partner_id[1] : 'Unknown',
+        date:     b.invoice_date || '—',
+        journal:  b.journal_id  ? b.journal_id[1]  : '—',
+        amt:      b.amount_total || 0,
+        issues:   issues,
+        score:    Math.max(0, score),
+        narration: nar
+      };
+    });
+
+    // ── UPDATE KPIs ──
+    var flagged = BILLS.filter(function(b){ return b.issues.length > 0; });
+    var clean   = BILLS.filter(function(b){ return b.score >= 85; });
+    var avg     = BILLS.length ? Math.round(BILLS.reduce(function(s,b){ return s+b.score; },0)/BILLS.length) : 0;
+    document.getElementById('a-total').textContent = BILLS.length;
+    document.getElementById('a-clean').textContent = clean.length;
+    document.getElementById('a-flag').textContent  = flagged.length;
+    document.getElementById('a-avg').textContent   = avg;
+    document.getElementById('d-total').textContent = BILLS.length;
+    document.getElementById('d-clean').textContent = clean.length;
+    document.getElementById('d-crit').textContent  = flagged.filter(function(b){ return b.score<65; }).length;
+    document.getElementById('d-warn').textContent  = flagged.filter(function(b){ return b.score>=65; }).length;
+
+    var attCount = BILLS.filter(function(b){ return b.issues.indexOf('attachment')>=0; }).length;
+    var narCount = BILLS.filter(function(b){ return b.issues.indexOf('narration')>=0; }).length;
+    var accCount = BILLS.filter(function(b){ return b.issues.indexOf('account')>=0; }).length;
+    var wtdsCount= BILLS.filter(function(b){ return b.issues.indexOf('wrong-tds')>=0; }).length;
+    var ntdsCount= BILLS.filter(function(b){ return b.issues.indexOf('no-tds')>=0; }).length;
+    var gstCount = BILLS.filter(function(b){ return b.issues.indexOf('gst')>=0; }).length;
+    var tdsCount = wtdsCount + ntdsCount;
+    ['badge-att','sn-att'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=attCount; });
+    ['badge-nar','sn-nar'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=narCount; });
+    ['badge-acc','sn-acc'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=accCount; });
+    ['badge-tds','sn-tds'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=tdsCount; });
+    ['badge-gst','sn-gst'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=gstCount; });
+    document.getElementById('badge-audit').textContent = flagged.filter(function(b){ return b.score<65; }).length;
+    document.getElementById('ic-att').textContent  = attCount;
+    document.getElementById('ic-nar').textContent  = narCount;
+    document.getElementById('ic-acc').textContent  = accCount;
+    document.getElementById('ic-wtds').textContent = wtdsCount;
+    document.getElementById('ic-ntds').textContent = ntdsCount;
+    document.getElementById('ic-gst').textContent  = gstCount;
+    if (BILLS.length) {
+      document.getElementById('ip-att').textContent  = Math.round(attCount/BILLS.length*100)+'%';
+      document.getElementById('ip-nar').textContent  = Math.round(narCount/BILLS.length*100)+'%';
+      document.getElementById('ip-acc').textContent  = Math.round(accCount/BILLS.length*100)+'%';
+      document.getElementById('ip-wtds').textContent = Math.round(wtdsCount/BILLS.length*100)+'%';
+      document.getElementById('ip-ntds').textContent = Math.round(ntdsCount/BILLS.length*100)+'%';
+      document.getElementById('ip-gst').textContent  = Math.round(gstCount/BILLS.length*100)+'%';
+    }
+
+    if (wrap) wrap.style.display = 'none';
+    var okBox = document.getElementById('dash-ok-box');
+    okBox.style.display = 'block';
+    okBox.textContent = '✅ Scan complete — ' + BILLS.length + ' bills reviewed. ' + clean.length + ' bills fully compliant.';
+
+    renderDashBills();
+    filterAudit('all');
+    renderAttachment();
+    renderNarration();
+    renderAccount();
+    renderTDS();
+    renderGST();
+
+    var scanTime = new Date().toLocaleString('en-IN');
+    document.getElementById('sb-scan').textContent = 'Last scan: ' + scanTime + ' — ' + BILLS.length + ' bills';
+    toast('Scan complete — ' + flagged.length + ' bills flagged', '✅');
+
+    // Save to Firebase
+    saveScanToFirebase();
+
+  } catch(e) {
+    if (wrap) wrap.style.display = 'none';
+    var hint = '';
+    if (e.message.toLowerCase().includes('failed to fetch') || e.message.toLowerCase().includes('networkerror')) {
+      hint = '\n\nThis is a CORS error. Your browser cannot reach Odoo directly from a static site.\nFix options:\n1. Self-hosted Odoo: add your domain to --proxy-mode or nginx CORS headers.\n2. Odoo.com SaaS: set up a small backend proxy (Node/Python) on Render and enter its URL in Settings → CORS Proxy URL.';
+    }
+    toast('Scan failed: ' + e.message, '❌');
+    alert('Scan failed:\n\n' + e.message + hint);
+  }
 }
 
 // ── EXPORT ──
@@ -1224,20 +1534,23 @@ function loadLastScanFromFirebase() {
 
 // ── SAVE / LOAD SETTINGS ──
 function saveSettings() {
-  var settings = {
-    odooUrl:  document.getElementById('s-url').value,
-    odooDb:   document.getElementById('s-db').value,
-    odooUser: document.getElementById('s-user').value,
+  var s = getOdooSettings();
+  var toStore = {
+    odooUrl:   s.url,
+    odooDb:    s.db,
+    odooUser:  s.user,
+    odooProxy: s.proxy,
     updatedAt: new Date().toISOString()
   };
-  // Always save to localStorage
-  localStorage.setItem('odoo_settings', JSON.stringify(settings));
+  localStorage.setItem('odoo_settings', JSON.stringify(toStore));
+  // Store password separately (never sent to Firebase)
+  if (s.pass) localStorage.setItem('odoo_pass', s.pass);
   if (db) {
-    db.collection('config').doc('odoo').set(settings)
+    db.collection('config').doc('odoo').set({ odooUrl: s.url, odooDb: s.db, odooUser: s.user, odooProxy: s.proxy, updatedAt: toStore.updatedAt })
       .then(function() { toast('Settings saved to Firebase ☁️', '💾'); })
       .catch(function(e) { toast('Local save OK, Firebase failed: ' + e.message, '⚠️'); });
   } else {
-    toast('Settings saved locally (Firebase not connected)', '💾');
+    toast('Settings saved locally', '💾');
   }
   document.getElementById('settings-saved-info').textContent =
     'Saved at ' + new Date().toLocaleTimeString('en-IN');
@@ -1274,9 +1587,13 @@ function loadSettingsFromFirebase() {
   db.collection('config').doc('odoo').get().then(function(doc) {
     if (!doc.exists) return;
     var s = doc.data();
-    if (s.odooUrl)  document.getElementById('s-url').value  = s.odooUrl;
-    if (s.odooDb)   document.getElementById('s-db').value   = s.odooDb;
-    if (s.odooUser) document.getElementById('s-user').value = s.odooUser;
+    if (s.odooUrl)   document.getElementById('s-url').value   = s.odooUrl;
+    if (s.odooDb)    document.getElementById('s-db').value    = s.odooDb;
+    if (s.odooUser)  document.getElementById('s-user').value  = s.odooUser;
+    if (s.odooProxy) document.getElementById('s-proxy').value = s.odooProxy;
+    // Password is never stored in Firebase — load from localStorage only
+    var p = localStorage.getItem('odoo_pass');
+    if (p) document.getElementById('s-pass').value = p;
   }).catch(function(){});
 
   db.collection('config').doc('rules').get().then(function(doc) {
@@ -1289,15 +1606,8 @@ function loadSettingsFromFirebase() {
   }).catch(function(){});
 }
 
-// ── PATCH runFullScan TO ALSO SAVE ──
-var _origRunFullScan = runFullScan;
-runFullScan = function() {
-  _origRunFullScan();
-  // Save to Firebase after scan completes (approx total delay)
-  setTimeout(function() { saveScanToFirebase(); }, 420 * 9 + 1200);
-};
-
 // ── INIT ──
+loadSettingsLocally();
 renderDashBills();
 filterAudit('all');
 renderAttachment();

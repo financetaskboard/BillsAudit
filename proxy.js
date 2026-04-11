@@ -107,7 +107,33 @@ async function searchRead(odooUrl, cookie, userCtx, model, domain, fields, limit
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  SMART ENDPOINT: POST /api/odoo/sync-bills
+//  SMART ENDPOINT: POST /api/odoo/test-connection
+//
+//  Body: { url, db, username, password }
+//  Returns: { ok: true, name, company }  |  { ok: false, error: '...' }
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/api/odoo/test-connection', async (req, res) => {
+  const { url, db, username, password } = req.body || {};
+  if (!url || !db || !username || !password) {
+    return res.json({ ok: false, error: 'url, db, username and password are required' });
+  }
+  try {
+    const { result: session } = await odooRpc(url, '/web/session/authenticate', {
+      db, login: username, password,
+    });
+    if (!session || !session.uid) throw new Error('Authentication failed — check credentials or database name');
+    res.json({
+      ok:      true,
+      name:    session.name,
+      company: session.company_id ? session.company_id[1] : '?',
+      uid:     session.uid,
+    });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
+});
+
+
 //
 //  Body: { url, db, username, password, minNarLen?, tdsThreshold?, accThreshold? }
 //  Returns: { ok: true, bills: [...] }  |  { ok: false, error: '...' }

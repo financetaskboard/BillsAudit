@@ -1,4 +1,6 @@
 services:
+
+  # ── 1. Frontend: static HTML dashboard ──────────────────────────────────────
   - type: web
     name: odoo-bill-audit
     env: static
@@ -7,3 +9,28 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+
+  # ── 2. CORS Proxy: Node.js service ──────────────────────────────────────────
+  #
+  # Needed when your Odoo instance is on odoo.com SaaS (or any host that does
+  # not send CORS headers). The static frontend cannot call Odoo directly from
+  # the browser in that case.
+  #
+  # After deploying, copy the proxy's URL (e.g. https://odoo-cors-proxy.onrender.com)
+  # and paste it into Settings → CORS Proxy URL inside the app.
+  #
+  # Set the ALLOWED_ORIGIN env var to your frontend URL to restrict access:
+  #   ALLOWED_ORIGIN = https://odoo-bill-audit.onrender.com
+  #
+  - type: web
+    name: odoo-cors-proxy
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_ORIGIN
+        # Replace with your actual frontend URL after first deploy
+        value: https://odoo-bill-audit.onrender.com
+    plan: free   # upgrade if you hit cold-start issues

@@ -239,12 +239,12 @@ tr.flag-row td{background:#fff8f8}
 <div class="databar">
   <span class="databar-label">Modules</span>
   <div class="dtab active" onclick="switchTab('dashboard')"><span class="ic">🏠</span> Dashboard</div>
-  <div class="dtab" onclick="switchTab('audit')"><span class="ic">🔍</span> Bill Audit <span class="dtab-badge warn" id="badge-audit">23</span></div>
-  <div class="dtab" onclick="switchTab('attachment')"><span class="ic">📎</span> Attachments <span class="dtab-badge warn" id="badge-att">14</span></div>
-  <div class="dtab" onclick="switchTab('narration')"><span class="ic">📝</span> Narration <span class="dtab-badge" id="badge-nar">9</span></div>
-  <div class="dtab" onclick="switchTab('account')"><span class="ic">🏦</span> Accounts <span class="dtab-badge" id="badge-acc">7</span></div>
-  <div class="dtab" onclick="switchTab('tds')"><span class="ic">%</span> TDS <span class="dtab-badge warn" id="badge-tds">13</span></div>
-  <div class="dtab" onclick="switchTab('gst')"><span class="ic">G</span> GST <span class="dtab-badge" id="badge-gst">5</span></div>
+  <div class="dtab" onclick="switchTab('audit')"><span class="ic">🔍</span> Bill Audit <span class="dtab-badge warn" id="badge-audit">0</span></div>
+  <div class="dtab" onclick="switchTab('attachment')"><span class="ic">📎</span> Attachments <span class="dtab-badge warn" id="badge-att">0</span></div>
+  <div class="dtab" onclick="switchTab('narration')"><span class="ic">📝</span> Narration <span class="dtab-badge" id="badge-nar">0</span></div>
+  <div class="dtab" onclick="switchTab('account')"><span class="ic">🏦</span> Accounts <span class="dtab-badge" id="badge-acc">0</span></div>
+  <div class="dtab" onclick="switchTab('tds')"><span class="ic">%</span> TDS <span class="dtab-badge warn" id="badge-tds">0</span></div>
+  <div class="dtab" onclick="switchTab('gst')"><span class="ic">G</span> GST <span class="dtab-badge" id="badge-gst">0</span></div>
   <div class="dtab" onclick="switchTab('reports')"><span class="ic">📊</span> Reports</div>
   <div class="databar-right">
     <button class="dbtn" onclick="switchTab('settings')">⚙ Settings</button>
@@ -259,18 +259,18 @@ tr.flag-row td{background:#fff8f8}
 <div class="sidebar">
   <div class="sec-lbl">Audit Checks</div>
   <div class="ni active" id="ni-dashboard" onclick="switchTab('dashboard')"><span class="ic">🏠</span> Overview</div>
-  <div class="ni" id="ni-audit" onclick="switchTab('audit')"><span class="ic">🔍</span> Bill Review <span class="nbadge warn">23</span></div>
+  <div class="ni" id="ni-audit" onclick="switchTab('audit')"><span class="ic">🔍</span> Bill Review <span class="nbadge warn">0</span></div>
   <div class="sec-lbl">Issues</div>
-  <div class="ni" id="ni-attachment" onclick="switchTab('attachment')"><span class="ic">📎</span> No Attachment <span class="nbadge warn" id="sn-att">14</span></div>
-  <div class="ni" id="ni-narration" onclick="switchTab('narration')"><span class="ic">📝</span> No Narration <span class="nbadge blue" id="sn-nar">9</span></div>
-  <div class="ni" id="ni-account" onclick="switchTab('account')"><span class="ic">🏦</span> Wrong Account <span class="nbadge gold" id="sn-acc">7</span></div>
-  <div class="ni" id="ni-tds" onclick="switchTab('tds')"><span class="ic">%</span> TDS Issues <span class="nbadge warn" id="sn-tds">13</span></div>
+  <div class="ni" id="ni-attachment" onclick="switchTab('attachment')"><span class="ic">📎</span> No Attachment <span class="nbadge warn" id="sn-att">0</span></div>
+  <div class="ni" id="ni-narration" onclick="switchTab('narration')"><span class="ic">📝</span> No Narration <span class="nbadge blue" id="sn-nar">0</span></div>
+  <div class="ni" id="ni-account" onclick="switchTab('account')"><span class="ic">🏦</span> Wrong Account <span class="nbadge gold" id="sn-acc">0</span></div>
+  <div class="ni" id="ni-tds" onclick="switchTab('tds')"><span class="ic">%</span> TDS Issues <span class="nbadge warn" id="sn-tds">0</span></div>
   <div class="ni" id="ni-gst" onclick="switchTab('gst')"><span class="ic">G</span> GST Issues <span class="nbadge gold" id="sn-gst">5</span></div>
   <div class="sec-lbl">Output</div>
   <div class="ni" id="ni-reports" onclick="switchTab('reports')"><span class="ic">📊</span> Reports &amp; Export</div>
   <div class="ni" id="ni-settings" onclick="switchTab('settings')"><span class="ic">⚙</span> Settings</div>
   <div class="sf">
-    <div class="sf-item">📅 Last scan: Today 21:16</div>
+    <div class="sf-item" id="sb-scan">📅 No scan yet — click Run Full Scan</div>
     <div class="sf-item">🏢 Company: Ginesys</div>
     <div class="ver">Odoo Bill Audit v1.0</div>
   </div>
@@ -307,47 +307,47 @@ tr.flag-row td{background:#fff8f8}
     <div id="dash-ok-box" class="ok-box" style="display:none">✅ Last scan completed successfully — 80 bills reviewed. <strong>39 bills fully compliant.</strong></div>
 
     <div class="kpi-row">
-      <div class="kpi blue"><div class="kpi-lbl">Total Bills</div><div class="kpi-val blue" id="d-total">80</div><div class="kpi-sub">FY 2025-26</div></div>
-      <div class="kpi green"><div class="kpi-lbl">Compliant</div><div class="kpi-val green" id="d-clean">39</div><div class="kpi-sub">Score ≥ 85</div></div>
-      <div class="kpi red"><div class="kpi-lbl">Critical Issues</div><div class="kpi-val red" id="d-crit">23</div><div class="kpi-sub">Need fix</div></div>
-      <div class="kpi gold"><div class="kpi-lbl">Warnings</div><div class="kpi-val gold" id="d-warn">18</div><div class="kpi-sub">Need review</div></div>
-      <div class="kpi orange"><div class="kpi-lbl">Total Amount</div><div class="kpi-val orange">₹18.4L</div><div class="kpi-sub">Flagged bills value</div></div>
+      <div class="kpi blue"><div class="kpi-lbl">Total Bills</div><div class="kpi-val blue" id="d-total">—</div><div class="kpi-sub">FY 2025-26</div></div>
+      <div class="kpi green"><div class="kpi-lbl">Compliant</div><div class="kpi-val green" id="d-clean">—</div><div class="kpi-sub">Score ≥ 85</div></div>
+      <div class="kpi red"><div class="kpi-lbl">Critical Issues</div><div class="kpi-val red" id="d-crit">—</div><div class="kpi-sub">Need fix</div></div>
+      <div class="kpi gold"><div class="kpi-lbl">Warnings</div><div class="kpi-val gold" id="d-warn">—</div><div class="kpi-sub">Need review</div></div>
+      <div class="kpi orange"><div class="kpi-lbl">Total Amount</div><div class="kpi-val orange">—</div><div class="kpi-sub">Flagged bills value</div></div>
     </div>
 
     <div class="issue-grid">
       <div class="icard ic-red" onclick="switchTab('attachment')">
-        <div class="icard-top"><span class="icard-icon">📎</span><span class="icard-pct pct-red" id="ip-att">18%</span></div>
-        <div class="icard-count cnt-red" id="ic-att">14</div>
+        <div class="icard-top"><span class="icard-icon">📎</span><span class="icard-pct pct-red" id="ip-att">0%</span></div>
+        <div class="icard-count cnt-red" id="ic-att">0</div>
         <div class="icard-label">Missing Attachment</div>
         <div class="icard-foot">No PDF or image attached to bill</div>
       </div>
       <div class="icard ic-red" onclick="switchTab('narration')">
-        <div class="icard-top"><span class="icard-icon">📝</span><span class="icard-pct pct-red" id="ip-nar">11%</span></div>
-        <div class="icard-count cnt-red" id="ic-nar">9</div>
+        <div class="icard-top"><span class="icard-icon">📝</span><span class="icard-pct pct-red" id="ip-nar">0%</span></div>
+        <div class="icard-count cnt-red" id="ic-nar">0</div>
         <div class="icard-label">Narration Missing / Too Short</div>
         <div class="icard-foot">Narration field empty or &lt; 5 characters</div>
       </div>
       <div class="icard ic-gold" onclick="switchTab('account')">
-        <div class="icard-top"><span class="icard-icon">🏦</span><span class="icard-pct pct-gold" id="ip-acc">9%</span></div>
-        <div class="icard-count cnt-gold" id="ic-acc">7</div>
+        <div class="icard-top"><span class="icard-icon">🏦</span><span class="icard-pct pct-gold" id="ip-acc">0%</span></div>
+        <div class="icard-count cnt-gold" id="ic-acc">0</div>
         <div class="icard-label">Wrong Account Used</div>
         <div class="icard-foot">Deviates from vendor's account pattern</div>
       </div>
       <div class="icard ic-orange" onclick="switchTab('tds')">
-        <div class="icard-top"><span class="icard-icon">%</span><span class="icard-pct pct-orange" id="ip-wtds">8%</span></div>
-        <div class="icard-count" style="font-size:28px;font-weight:300;color:var(--orange)" id="ic-wtds">6</div>
+        <div class="icard-top"><span class="icard-icon">%</span><span class="icard-pct pct-orange" id="ip-wtds">0%</span></div>
+        <div class="icard-count" style="font-size:28px;font-weight:300;color:var(--orange)" id="ic-wtds">0</div>
         <div class="icard-label">Wrong TDS Rate Applied</div>
         <div class="icard-foot">TDS section/rate does not match vendor type</div>
       </div>
       <div class="icard ic-red" onclick="switchTab('tds')">
-        <div class="icard-top"><span class="icard-icon">🚫</span><span class="icard-pct pct-red" id="ip-ntds">9%</span></div>
-        <div class="icard-count cnt-red" id="ic-ntds">7</div>
+        <div class="icard-top"><span class="icard-icon">🚫</span><span class="icard-pct pct-red" id="ip-ntds">0%</span></div>
+        <div class="icard-count cnt-red" id="ic-ntds">0</div>
         <div class="icard-label">TDS Not Applied</div>
         <div class="icard-foot">TDS entry missing on applicable bill</div>
       </div>
       <div class="icard ic-gold" onclick="switchTab('gst')">
-        <div class="icard-top"><span class="icard-icon">G</span><span class="icard-pct pct-gold" id="ip-gst">6%</span></div>
-        <div class="icard-count cnt-gold" id="ic-gst">5</div>
+        <div class="icard-top"><span class="icard-icon">G</span><span class="icard-pct pct-gold" id="ip-gst">0%</span></div>
+        <div class="icard-count cnt-gold" id="ic-gst">0</div>
         <div class="icard-label">Wrong GST Treatment</div>
         <div class="icard-foot">IGST used instead of SGST+CGST or vice versa</div>
       </div>
@@ -409,10 +409,10 @@ tr.flag-row td{background:#fff8f8}
     </div>
 
     <div class="kpi-row-4">
-      <div class="kpi blue"><div class="kpi-lbl">Scanned</div><div class="kpi-val blue" id="a-total">80</div><div class="kpi-sub">bills reviewed</div></div>
-      <div class="kpi green"><div class="kpi-lbl">Compliant</div><div class="kpi-val green" id="a-clean">39</div><div class="kpi-sub">score ≥ 85</div></div>
-      <div class="kpi red"><div class="kpi-lbl">Flagged</div><div class="kpi-val red" id="a-flag">41</div><div class="kpi-sub">need attention</div></div>
-      <div class="kpi gold"><div class="kpi-lbl">Avg Score</div><div class="kpi-val gold" id="a-avg">68</div><div class="kpi-sub">out of 100</div></div>
+      <div class="kpi blue"><div class="kpi-lbl">Scanned</div><div class="kpi-val blue" id="a-total">—</div><div class="kpi-sub">bills reviewed</div></div>
+      <div class="kpi green"><div class="kpi-lbl">Compliant</div><div class="kpi-val green" id="a-clean">—</div><div class="kpi-sub">score ≥ 85</div></div>
+      <div class="kpi red"><div class="kpi-lbl">Flagged</div><div class="kpi-val red" id="a-flag">—</div><div class="kpi-sub">need attention</div></div>
+      <div class="kpi gold"><div class="kpi-lbl">Avg Score</div><div class="kpi-val gold" id="a-avg">—</div><div class="kpi-sub">out of 100</div></div>
     </div>
 
     <div class="fbar">
@@ -861,8 +861,15 @@ function filterAudit(f){
   document.getElementById('audit-body').innerHTML = html||'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">No bills match this filter</td></tr>';
 }
 
+// ── EMPTY STATE helper ──
+function emptyState(msg) {
+  return '<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted);font-size:12.5px">'
+    + '▶ ' + (msg || 'Run a Full Scan to see results here') + '</td></tr>';
+}
+
 // ── ATTACHMENT TABLE ──
 function renderAttachment(){
+  if (!BILLS.length) { document.getElementById('att-body').innerHTML = emptyState(); document.getElementById('att-sub').textContent = '0 bills'; return; }
   var data = BILLS.filter(function(b){return b.issues.indexOf('attachment')>=0;});
   var html = data.map(function(b,i){
     return '<tr class="flag-row">'
@@ -875,158 +882,103 @@ function renderAttachment(){
       +'<td class="left"><span class="tag tag-err">No Attachment</span></td>'
       +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\','+b._odooId+')">↗</button></td>'
       +'</tr>';
-  }).join('');
+  }).join('') || emptyState('No attachment issues found');
   document.getElementById('att-body').innerHTML = html;
   var total = data.reduce(function(s,b){return s+b.amt;},0);
   document.getElementById('att-sub').textContent = data.length+' bills · '+pINR(total)+' total value';
 }
 
 // ── NARRATION TABLE ──
-var NAR_DATA = [
-  {id:'BHR/2024/3220',vendor:'Kapoor & Sons',date:'07/03/2026',amt:45000,nar:'',issue:'Completely empty'},
-  {id:'BHR/2024/3301',vendor:'Kumar Agencies',date:'25/03/2026',amt:22300,nar:'misc',issue:'Too short (4 chars)'},
-  {id:'BHR/2024/3310',vendor:'National Traders',date:'26/03/2026',amt:88000,nar:'',issue:'Completely empty'},
-  {id:'BHR/2024/3321',vendor:'City Hardware',date:'28/03/2026',amt:4600,nar:'ok',issue:'Too short (2 chars)'},
-  {id:'BHR/2024/3360',vendor:'Sunrise Enterprises',date:'05/04/2026',amt:27800,nar:'',issue:'Completely empty'},
-  {id:'BHR/2024/3278',vendor:'Singh Furnishers',date:'20/03/2026',amt:14750,nar:'bill',issue:'Too short (4 chars)'},
-  {id:'BHR/2024/3290',vendor:'Patel Enterprises',date:'23/03/2026',amt:5100,nar:'',issue:'Completely empty'},
-  {id:'BHR/2024/3288',vendor:'SK COMPUTEC SYSTEMS',date:'03/04/2026',amt:2596,nar:'Hp 250 G8 Screen Panel with Bazal Replace for Rohit Ji\'s laptop',issue:'Typo: "Bazal" → "Bezel"'},
-  {id:'BHR/2024/3235',vendor:'Delhi Supplies Co',date:'10/03/2026',amt:3200,nar:'inv',issue:'Too short (3 chars)'},
-];
 function renderNarration(){
-  // After a real scan, derive from BILLS; fall back to static demo data
-  var minNar = parseInt(document.getElementById('r-nar-len').value) || 5;
-  var hasScanData = BILLS.length > 0 && BILLS[0]._odooId;
-  var data;
-  if (hasScanData) {
-    data = BILLS.filter(function(b){ return b.issues.indexOf('narration')>=0; }).map(function(b){
-      var nar = (b.narration||'').trim();
-      var issue = nar.length===0 ? 'Completely empty' : 'Too short ('+nar.length+' chars)';
-      return { id:b.id, _odooId:b._odooId, vendor:b.vendor, date:b.date, amt:b.amt, nar:nar, issue:issue };
-    });
-  } else {
-    data = NAR_DATA;
-  }
+  if (!BILLS.length) { document.getElementById('nar-body').innerHTML = emptyState(); return; }
+  var data = BILLS.filter(function(b){ return b.issues.indexOf('narration')>=0; }).map(function(b){
+    var nar = (b.narration||'').trim();
+    var issue = nar.length===0 ? 'Completely empty' : 'Too short ('+nar.length+' chars)';
+    return { id:b.id, _odooId:b._odooId, vendor:b.vendor, date:b.date, amt:b.amt, nar:nar, issue:issue };
+  });
   var html = data.map(function(b,i){
-    var narDisplay = b.nar?('<span style="font-style:italic;color:var(--muted)">'+b.nar+'</span>'):'<span style="color:var(--light)">— empty —</span>';
-    var issueTag = b.issue.indexOf('empty')>=0?'<span class="tag tag-err">Empty</span>':b.issue.indexOf('Typo')>=0?'<span class="tag tag-warn">Typo</span>':'<span class="tag tag-warn">Too Short</span>';
+    var narDisplay = b.nar ? ('<span style="font-style:italic;color:var(--muted)">'+b.nar+'</span>') : '<span style="color:var(--light)">— empty —</span>';
+    var issueTag = b.issue.indexOf('empty')>=0 ? '<span class="tag tag-err">Empty</span>' : '<span class="tag tag-warn">Too Short</span>';
     return '<tr>'
       +'<td class="left" style="color:var(--muted);font-size:11px">'+(i+1)+'</td>'
       +'<td class="left" style="font-weight:600;color:#0066cc">'+b.id+'</td>'
       +'<td class="left">'+b.vendor+'</td>'
       +'<td class="left" style="color:var(--muted)">'+b.date+'</td>'
       +'<td>'+pINR(b.amt)+'</td>'
-      +'<td class="left" style="max-width:200px">'+narDisplay+'</td>'
+      +'<td class="left" style="max-width:220px">'+narDisplay+'</td>'
       +'<td class="left">'+issueTag+' <span style="font-size:11px;color:var(--muted)">'+b.issue+'</span></td>'
-      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\','+(b._odooId||'undefined')+')">↗</button></td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\','+b._odooId+')">↗</button></td>'
       +'</tr>';
-  }).join('');
+  }).join('') || emptyState('No narration issues found');
   document.getElementById('nar-body').innerHTML = html;
 }
 
 // ── ACCOUNT TABLE ──
-var ACC_DATA = [
-  {id:'BHR/2024/3262',vendor:'Verma Plastics',date:'16/03/2026',amt:6500,used:'400012 Purchase',expected:'500010 Raw Material',pct:'12%'},
-  {id:'BHR/2024/3290',vendor:'Patel Enterprises',date:'23/03/2026',amt:5100,used:'600040 Misc Exp',expected:'410012 Computer',pct:'8%'},
-  {id:'BHR/2024/3330',vendor:'Tech Solutions Ltd',date:'29/03/2026',amt:67000,used:'400001 Purchase',expected:'410012 Computer',pct:'0%'},
-  {id:'BHR/2024/3340',vendor:'Office Needs India',date:'01/04/2026',amt:9200,used:'600040 Misc Exp',expected:'410020 Office Supply',pct:'15%'},
-  {id:'BHR/2024/3370',vendor:'Ram Kumar & Co',date:'06/04/2026',amt:18200,used:'400012 Purchase',expected:'500001 Raw Material',pct:'20%'},
-  {id:'BHR/2024/3375',vendor:'Excel Computers',date:'07/04/2026',amt:52000,used:'600010 Exp',expected:'410012 Computer',pct:'5%'},
-  {id:'BHR/2024/3241',vendor:'Mehta Hardware',date:'12/03/2026',amt:18600,used:'600040 Misc',expected:'500010 Hardware',pct:'18%'},
-];
-var ACC_MAP = [
-  {vendor:'Verma Plastics',expected:'500010 Raw Material',bills:12,pct:'88%',last:'Jan 2026'},
-  {vendor:'Patel Enterprises',expected:'410012 Computer Exp',bills:8,pct:'75%',last:'Feb 2026'},
-  {vendor:'Tech Solutions Ltd',expected:'410012 Computer Exp',bills:15,pct:'93%',last:'Mar 2026'},
-  {vendor:'Office Needs India',expected:'410020 Office Supply',bills:6,pct:'83%',last:'Feb 2026'},
-  {vendor:'Mehta Hardware',expected:'500010 Hardware',bills:10,pct:'80%',last:'Mar 2026'},
-];
 function renderAccount(){
-  var html = ACC_DATA.map(function(b,i){
+  if (!BILLS.length) {
+    document.getElementById('acc-body').innerHTML = emptyState();
+    document.getElementById('acc-map-body').innerHTML = emptyState('Run a Full Scan to build vendor → account pattern map');
+    return;
+  }
+  var data = BILLS.filter(function(b){ return b.issues.indexOf('account')>=0; });
+  var html = data.map(function(b,i){
     return '<tr class="flag-row">'
       +'<td class="left" style="color:var(--muted);font-size:11px">'+(i+1)+'</td>'
       +'<td class="left" style="font-weight:600;color:#0066cc">'+b.id+'</td>'
       +'<td class="left">'+b.vendor+'</td>'
       +'<td class="left" style="color:var(--muted)">'+b.date+'</td>'
       +'<td>'+pINR(b.amt)+'</td>'
-      +'<td class="left"><span class="tag tag-err">'+b.used+'</span></td>'
-      +'<td class="left"><span class="tag tag-ok">'+b.expected+'</span></td>'
-      +'<td style="color:var(--red);font-weight:600">'+b.pct+' match</td>'
-      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'<td class="left"><span class="tag tag-err">Account mismatch</span></td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\','+b._odooId+')">↗</button></td>'
       +'</tr>';
-  }).join('');
+  }).join('') || emptyState('No account pattern issues found');
   document.getElementById('acc-body').innerHTML = html;
-  var mhtml = ACC_MAP.map(function(r){
-    return '<tr>'
-      +'<td class="left" style="font-weight:600">'+r.vendor+'</td>'
-      +'<td class="left"><span class="tag tag-info">'+r.expected+'</span></td>'
-      +'<td>'+r.bills+'</td>'
-      +'<td style="color:var(--green);font-weight:600">'+r.pct+'</td>'
-      +'<td class="left" style="color:var(--muted)">'+r.last+'</td>'
-      +'</tr>';
-  }).join('');
+  // Pattern map — summarise unique vendors with account issues
+  var vendors = {};
+  data.forEach(function(b){ vendors[b.vendor] = (vendors[b.vendor]||0)+1; });
+  var mhtml = Object.keys(vendors).map(function(v){
+    return '<tr><td class="left" style="font-weight:600">'+v+'</td>'
+      +'<td class="left"><span class="tag tag-warn">Account deviation</span></td>'
+      +'<td>'+vendors[v]+'</td><td style="color:var(--red);font-weight:600">—</td><td class="left" style="color:var(--muted)">—</td></tr>';
+  }).join('') || emptyState('No deviations found');
   document.getElementById('acc-map-body').innerHTML = mhtml;
 }
 
 // ── TDS TABLE ──
-var TDS_DATA = [
-  {id:'BHR/2024/3345',vendor:'Prime Vendors Pvt',date:'02/04/2026',amt:41500,type:'Wrong Rate',applied:'194C @ 1%',expected:'194C @ 2%',tds:415,exp_tds:830},
-  {id:'BHR/2024/3241',vendor:'Mehta Hardware',date:'12/03/2026',amt:18600,type:'Wrong Rate',applied:'194C @ 1%',expected:'194J @ 10%',tds:186,exp_tds:1860},
-  {id:'BHR/2024/3355',vendor:'Alpha Traders',date:'04/04/2026',amt:33000,type:'Wrong Rate',applied:'194C @ 2%',expected:'194J @ 10%',tds:660,exp_tds:3300},
-  {id:'BHR/2024/3375',vendor:'Excel Computers',date:'07/04/2026',amt:52000,type:'Wrong Rate',applied:'194C @ 1%',expected:'194J @ 10%',tds:520,exp_tds:5200},
-  {id:'BHR/2024/3201',vendor:'Ravi Traders',date:'01/03/2026',amt:12400,type:'TDS Missing',applied:'—',expected:'194C @ 1%',tds:0,exp_tds:124},
-  {id:'BHR/2024/3278',vendor:'Singh Furnishers',date:'20/03/2026',amt:14750,type:'TDS Missing',applied:'—',expected:'194C @ 2%',tds:0,exp_tds:295},
-  {id:'BHR/2024/3310',vendor:'National Traders',date:'26/03/2026',amt:88000,type:'TDS Missing',applied:'—',expected:'194J @ 10%',tds:0,exp_tds:8800},
-  {id:'BHR/2024/3350',vendor:'Star Supplies Co',date:'03/04/2026',amt:15600,type:'TDS Missing',applied:'—',expected:'194C @ 1%',tds:0,exp_tds:156},
-  {id:'BHR/2024/3360',vendor:'Sunrise Enterprises',date:'05/04/2026',amt:27800,type:'TDS Missing',applied:'—',expected:'194J @ 10%',tds:0,exp_tds:2780},
-  {id:'BHR/2024/3220',vendor:'Kapoor & Sons',date:'07/03/2026',amt:45000,type:'Wrong Rate',applied:'194C @ 1%',expected:'194J @ 10%',tds:450,exp_tds:4500},
-  {id:'BHR/2024/3255',vendor:'Gupta Tech Solutions',date:'14/03/2026',amt:92000,type:'Wrong Rate',applied:'194C @ 2%',expected:'194J @ 10%',tds:1840,exp_tds:9200},
-  {id:'BHR/2024/3385',vendor:'Spectrum Agencies',date:'09/04/2026',amt:39500,type:'TDS Missing',applied:'—',expected:'194C @ 2%',tds:0,exp_tds:790},
-  {id:'BHR/2024/3282',vendor:'Agarwal Services',date:'22/03/2026',amt:7800,type:'TDS Missing',applied:'—',expected:'194C @ 1%',tds:0,exp_tds:78},
-];
 function renderTDS(){
-  var html = TDS_DATA.map(function(b,i){
-    var typetag = b.type==='TDS Missing'?'<span class="tag tag-err">TDS Missing</span>':'<span class="tag tag-warn">Wrong Rate</span>';
-    return '<tr'+(b.type==='TDS Missing'?' class="flag-row"':'')+'>'
+  if (!BILLS.length) { document.getElementById('tds-body').innerHTML = emptyState(); return; }
+  var data = BILLS.filter(function(b){ return b.issues.indexOf('no-tds')>=0 || b.issues.indexOf('wrong-tds')>=0; });
+  var html = data.map(function(b,i){
+    var isNoTds = b.issues.indexOf('no-tds')>=0;
+    var typetag = isNoTds ? '<span class="tag tag-err">TDS Missing</span>' : '<span class="tag tag-warn">Wrong Rate</span>';
+    return '<tr'+(isNoTds?' class="flag-row"':'')+'>'
       +'<td class="left" style="color:var(--muted);font-size:11px">'+(i+1)+'</td>'
       +'<td class="left" style="font-weight:600;color:#0066cc">'+b.id+'</td>'
       +'<td class="left">'+b.vendor+'</td>'
       +'<td class="left" style="color:var(--muted)">'+b.date+'</td>'
       +'<td>'+pINR(b.amt)+'</td>'
       +'<td class="left">'+typetag+'</td>'
-      +'<td class="left"><span class="tag '+(b.applied==='—'?'tag-err':'tag-warn')+'">'+b.applied+'</span></td>'
-      +'<td class="left"><span class="tag tag-ok">'+b.expected+'</span></td>'
-      +'<td style="color:'+(b.tds===0?'var(--red)':'var(--muted)')+'">'+pINR(b.tds)+'</td>'
-      +'<td style="font-weight:600">'+pINR(b.exp_tds)+'</td>'
-      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\','+b._odooId+')">↗</button></td>'
       +'</tr>';
-  }).join('');
+  }).join('') || emptyState('No TDS issues found');
   document.getElementById('tds-body').innerHTML = html;
 }
 
 // ── GST TABLE ──
-var GST_DATA = [
-  {id:'BHR/2024/3255',vendor:'Gupta Tech Solutions',state:'Delhi (07)',pos:'Haryana (06)',amt:92000,applied:'IGST 18%',expected:'SGST+CGST 18%',impact:'ITC block risk'},
-  {id:'BHR/2024/3330',vendor:'Tech Solutions Ltd',state:'Haryana (06)',pos:'Delhi (07)',amt:67000,applied:'SGST+CGST 18%',expected:'IGST 18%',impact:'ITC block risk'},
-  {id:'BHR/2024/3355',vendor:'Alpha Traders',state:'Delhi (07)',pos:'Delhi (07)',amt:33000,applied:'IGST 18%',expected:'SGST+CGST 18%',impact:'Incorrect split'},
-  {id:'BHR/2024/3375',vendor:'Excel Computers',state:'Haryana (06)',pos:'Maharashtra (27)',amt:52000,applied:'SGST+CGST 18%',expected:'IGST 18%',impact:'ITC mismatch'},
-  {id:'BHR/2024/3241',vendor:'Mehta Hardware',state:'Rajasthan (08)',pos:'Haryana (06)',amt:18600,applied:'SGST+CGST 18%',expected:'IGST 18%',impact:'ITC block risk'},
-];
 function renderGST(){
-  var html = GST_DATA.map(function(b,i){
+  if (!BILLS.length) { document.getElementById('gst-body').innerHTML = emptyState(); return; }
+  var data = BILLS.filter(function(b){ return b.issues.indexOf('gst')>=0; });
+  var html = data.map(function(b,i){
     return '<tr class="flag-row">'
       +'<td class="left" style="color:var(--muted);font-size:11px">'+(i+1)+'</td>'
       +'<td class="left" style="font-weight:600;color:#0066cc">'+b.id+'</td>'
       +'<td class="left">'+b.vendor+'</td>'
-      +'<td class="left"><span class="tag tag-gray">'+b.state+'</span></td>'
-      +'<td class="left"><span class="tag tag-info">'+b.pos+'</span></td>'
+      +'<td class="left" style="color:var(--muted)">'+b.date+'</td>'
       +'<td>'+pINR(b.amt)+'</td>'
-      +'<td class="left"><span class="tag tag-err">'+b.applied+'</span></td>'
-      +'<td class="left"><span class="tag tag-ok">'+b.expected+'</span></td>'
-      +'<td class="left"><span class="tag tag-warn">'+b.impact+'</span></td>'
-      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\')">↗</button></td>'
+      +'<td class="left"><span class="tag tag-err">IGST + CGST/SGST conflict</span></td>'
+      +'<td><button class="icon-btn" onclick="openBill(\''+b.id+'\','+b._odooId+')">↗</button></td>'
       +'</tr>';
-  }).join('');
+  }).join('') || emptyState('No GST treatment issues found');
   document.getElementById('gst-body').innerHTML = html;
 }
 
@@ -1114,20 +1066,37 @@ async function odooSearchRead(model, domain, fields, limit, order) {
   });
 }
 
-// ── TEST CONNECTION (REAL) ──
+// ── TEST CONNECTION ──
+// If a proxy is configured → call /api/odoo/test-connection on the proxy (server-side, no CORS).
+// Otherwise → authenticate directly from the browser (self-hosted Odoo with CORS headers).
 async function testConnection(btn) {
   btn.disabled = true; btn.textContent = 'Testing…';
+  var s = getOdooSettings();
+  var info = document.getElementById('settings-saved-info');
   try {
-    var sess = await odooAuthenticate();
-    var company = sess.company_id ? sess.company_id[1] : '?';
-    document.getElementById('settings-saved-info').textContent = 'Connected as ' + sess.name + ' · ' + company;
-    toast('Odoo connected ✅ — ' + sess.name + ' @ ' + company, '✅');
-  } catch(e) {
-    var hint = '';
-    if (e.message.toLowerCase().includes('failed to fetch') || e.message.toLowerCase().includes('networkerror')) {
-      hint = ' (CORS blocked — add a Proxy URL above)';
+    if (s.proxy) {
+      // Server-side path — proxy authenticates with Odoo, no browser CORS
+      var resp = await fetch(s.proxy + '/api/odoo/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: s.url, db: s.db, username: s.user, password: s.pass })
+      });
+      var data = await resp.json();
+      if (!data.ok) throw new Error(data.error || 'Connection failed');
+      info.textContent = 'Connected as ' + data.name + ' · ' + data.company;
+      toast('Odoo connected ✅ — ' + data.name + ' @ ' + data.company, '✅');
+    } else {
+      // Direct path — browser calls Odoo directly (self-hosted with CORS headers)
+      var sess = await odooAuthenticate();
+      var company = sess.company_id ? sess.company_id[1] : '?';
+      info.textContent = 'Connected as ' + sess.name + ' · ' + company;
+      toast('Odoo connected ✅ — ' + sess.name + ' @ ' + company, '✅');
     }
-    document.getElementById('settings-saved-info').textContent = '❌ ' + e.message + hint;
+  } catch(e) {
+    var hint = (!s.proxy && (e.message.toLowerCase().includes('failed to fetch') || e.message.toLowerCase().includes('networkerror')))
+      ? ' (CORS blocked — add a Proxy URL above)'
+      : '';
+    info.textContent = '❌ ' + e.message + hint;
     toast('Connection failed: ' + e.message + hint, '❌');
   }
   btn.disabled = false; btn.textContent = 'Test Connection';
@@ -1674,14 +1643,7 @@ function loadSettingsFromFirebase() {
 
 // ── INIT ──
 loadSettingsLocally();
-renderDashBills();
-filterAudit('all');
-renderAttachment();
-renderNarration();
-renderAccount();
-renderTDS();
-renderGST();
-
+// Do NOT pre-render tables — all data comes from a real Odoo scan.
 // Auto-reconnect Firebase if credentials were saved previously
 setTimeout(autoInitFirebase, 300);
 </script>

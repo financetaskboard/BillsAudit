@@ -1147,6 +1147,10 @@ function openBill(id, odooId) {
 }
 
 // ── RUN FULL SCAN (REAL ODOO SYNC) ──
+// Strategy (mirrors TDS app):
+//   If a proxy URL is configured → call POST /api/odoo/sync-bills on the proxy server.
+//     The server does all 5 Odoo calls and returns a ready bill array — no browser CORS.
+//   If no proxy (self-hosted Odoo with CORS headers) → fall back to direct browser calls.
 async function runFullScan() {
   var wrap = document.getElementById('prog-wrap');
   if (wrap) wrap.style.display = 'block';
@@ -1159,8 +1163,58 @@ async function runFullScan() {
     document.getElementById('prog-pct').textContent  = pct + '%';
   }
 
+  var s = getOdooSettings();
+
+  // ══════════════════════════════════════════════════════════════
+  // PATH A — SERVER-SIDE SYNC (proxy configured)
+  // One POST to the proxy; proxy does all Odoo calls internally.
+  // ══════════════════════════════════════════════════════════════
+  if (s.proxy) {
+    try {
+      prog(10, 'Connecting via proxy server…', 'Sending sync request to ' + s.proxy);
+      var resp = await fetch(s.proxy + '/api/odoo/sync-bills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url:          s.url,
+          db:           s.db,
+          username:     s.user,
+          password:     s.pass,
+          minNarLen:    parseInt(document.getElementById('r-nar-len').value)    || 5,
+          tdsThreshold: parseFloat(document.getElementById('r-tds-thresh').value) || 30000,
+          accThreshold: parseFloat(document.getElementById('r-acc-thresh').value) || 70,
+        })
+      });
+
+      prog(60, 'Processing bills…', 'Server is auditing and scoring all bills');
+      var payload = await resp.json();
+
+      if (!payload.ok) throw new Error(payload.error || 'Sync failed on server');
+
+      // Log server-side debug messages to console (same as TDS app)
+      if (payload.log && payload.log.length) {
+        console.log('[Odoo Sync Server Log]:');
+        payload.log.forEach(function(m){ console.log('  [Odoo]', m); });
+      }
+
+      prog(100, 'Scan complete!', payload.bills.length + ' bills reviewed');
+      BILLS = payload.bills;
+      _finaliseScan();
+      return;
+
+    } catch(e) {
+      if (wrap) wrap.style.display = 'none';
+      toast('Scan failed: ' + e.message, '❌');
+      alert('Scan failed:\n\n' + e.message);
+      return;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // PATH B — DIRECT BROWSER CALLS (no proxy, self-hosted Odoo)
+  // Falls through to the original multi-call approach below.
+  // ══════════════════════════════════════════════════════════════
   try {
-    var s = getOdooSettings();
     prog(8, 'Connecting to Odoo…', 'Authenticating with ' + (s.url || 'Odoo'));
     await odooAuthenticate();
 
@@ -1245,9 +1299,12 @@ async function runFullScan() {
     var tdsThreshold = parseFloat(document.getElementById('r-tds-thresh').value) || 30000;
     var accThreshold = parseFloat(document.getElementById('r-acc-thresh').value) || 70;
 
-    prog(100, 'Scan complete!', rawBills.length + ' bills reviewed');
+    prog(96, 'Scoring bills…', rawBills.length + ' bills reviewed');
 
     // ── AUDIT EACH BILL ──
+    var minNar      = parseInt(document.getElementById('r-nar-len').value)    || 5;
+    var tdsThreshold = parseFloat(document.getElementById('r-tds-thresh').value) || 30000;
+    var accThreshold = parseFloat(document.getElementById('r-acc-thresh').value) || 70;
     BILLS = rawBills.map(function(b){
       var issues = [];
       var score  = 100;
@@ -1306,76 +1363,85 @@ async function runFullScan() {
       };
     });
 
-    // ── UPDATE KPIs ──
-    var flagged = BILLS.filter(function(b){ return b.issues.length > 0; });
-    var clean   = BILLS.filter(function(b){ return b.score >= 85; });
-    var avg     = BILLS.length ? Math.round(BILLS.reduce(function(s,b){ return s+b.score; },0)/BILLS.length) : 0;
-    document.getElementById('a-total').textContent = BILLS.length;
-    document.getElementById('a-clean').textContent = clean.length;
-    document.getElementById('a-flag').textContent  = flagged.length;
-    document.getElementById('a-avg').textContent   = avg;
-    document.getElementById('d-total').textContent = BILLS.length;
-    document.getElementById('d-clean').textContent = clean.length;
-    document.getElementById('d-crit').textContent  = flagged.filter(function(b){ return b.score<65; }).length;
-    document.getElementById('d-warn').textContent  = flagged.filter(function(b){ return b.score>=65; }).length;
-
-    var attCount = BILLS.filter(function(b){ return b.issues.indexOf('attachment')>=0; }).length;
-    var narCount = BILLS.filter(function(b){ return b.issues.indexOf('narration')>=0; }).length;
-    var accCount = BILLS.filter(function(b){ return b.issues.indexOf('account')>=0; }).length;
-    var wtdsCount= BILLS.filter(function(b){ return b.issues.indexOf('wrong-tds')>=0; }).length;
-    var ntdsCount= BILLS.filter(function(b){ return b.issues.indexOf('no-tds')>=0; }).length;
-    var gstCount = BILLS.filter(function(b){ return b.issues.indexOf('gst')>=0; }).length;
-    var tdsCount = wtdsCount + ntdsCount;
-    ['badge-att','sn-att'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=attCount; });
-    ['badge-nar','sn-nar'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=narCount; });
-    ['badge-acc','sn-acc'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=accCount; });
-    ['badge-tds','sn-tds'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=tdsCount; });
-    ['badge-gst','sn-gst'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=gstCount; });
-    document.getElementById('badge-audit').textContent = flagged.filter(function(b){ return b.score<65; }).length;
-    document.getElementById('ic-att').textContent  = attCount;
-    document.getElementById('ic-nar').textContent  = narCount;
-    document.getElementById('ic-acc').textContent  = accCount;
-    document.getElementById('ic-wtds').textContent = wtdsCount;
-    document.getElementById('ic-ntds').textContent = ntdsCount;
-    document.getElementById('ic-gst').textContent  = gstCount;
-    if (BILLS.length) {
-      document.getElementById('ip-att').textContent  = Math.round(attCount/BILLS.length*100)+'%';
-      document.getElementById('ip-nar').textContent  = Math.round(narCount/BILLS.length*100)+'%';
-      document.getElementById('ip-acc').textContent  = Math.round(accCount/BILLS.length*100)+'%';
-      document.getElementById('ip-wtds').textContent = Math.round(wtdsCount/BILLS.length*100)+'%';
-      document.getElementById('ip-ntds').textContent = Math.round(ntdsCount/BILLS.length*100)+'%';
-      document.getElementById('ip-gst').textContent  = Math.round(gstCount/BILLS.length*100)+'%';
-    }
-
+    // ── UPDATE KPIs & render (shared with server-side path) ──
     if (wrap) wrap.style.display = 'none';
-    var okBox = document.getElementById('dash-ok-box');
-    okBox.style.display = 'block';
-    okBox.textContent = '✅ Scan complete — ' + BILLS.length + ' bills reviewed. ' + clean.length + ' bills fully compliant.';
-
-    renderDashBills();
-    filterAudit('all');
-    renderAttachment();
-    renderNarration();
-    renderAccount();
-    renderTDS();
-    renderGST();
-
-    var scanTime = new Date().toLocaleString('en-IN');
-    document.getElementById('sb-scan').textContent = 'Last scan: ' + scanTime + ' — ' + BILLS.length + ' bills';
-    toast('Scan complete — ' + flagged.length + ' bills flagged', '✅');
-
-    // Save to Firebase
-    saveScanToFirebase();
+    _finaliseScan();
 
   } catch(e) {
     if (wrap) wrap.style.display = 'none';
     var hint = '';
     if (e.message.toLowerCase().includes('failed to fetch') || e.message.toLowerCase().includes('networkerror')) {
-      hint = '\n\nThis is a CORS error. Your browser cannot reach Odoo directly from a static site.\nFix options:\n1. Self-hosted Odoo: add your domain to --proxy-mode or nginx CORS headers.\n2. Odoo.com SaaS: set up a small backend proxy (Node/Python) on Render and enter its URL in Settings → CORS Proxy URL.';
+      hint = '\n\nThis is a CORS error. Your browser cannot reach Odoo directly.\n' +
+             'Fix: enter your proxy URL in Settings → CORS Proxy URL.\n' +
+             'The proxy\'s /api/odoo/sync-bills endpoint will handle the scan server-side.';
     }
     toast('Scan failed: ' + e.message, '❌');
     alert('Scan failed:\n\n' + e.message + hint);
   }
+}
+
+// ── SHARED: update KPIs, badges and re-render all tabs after a scan ──
+function _finaliseScan() {
+  var wrap    = document.getElementById('prog-wrap');
+  var flagged = BILLS.filter(function(b){ return b.issues.length > 0; });
+  var clean   = BILLS.filter(function(b){ return b.score >= 85; });
+  var avg     = BILLS.length ? Math.round(BILLS.reduce(function(s,b){ return s+b.score; },0)/BILLS.length) : 0;
+
+  document.getElementById('a-total').textContent = BILLS.length;
+  document.getElementById('a-clean').textContent = clean.length;
+  document.getElementById('a-flag').textContent  = flagged.length;
+  document.getElementById('a-avg').textContent   = avg;
+  document.getElementById('d-total').textContent = BILLS.length;
+  document.getElementById('d-clean').textContent = clean.length;
+  document.getElementById('d-crit').textContent  = flagged.filter(function(b){ return b.score<65; }).length;
+  document.getElementById('d-warn').textContent  = flagged.filter(function(b){ return b.score>=65; }).length;
+
+  var attCount  = BILLS.filter(function(b){ return b.issues.indexOf('attachment')>=0; }).length;
+  var narCount  = BILLS.filter(function(b){ return b.issues.indexOf('narration')>=0; }).length;
+  var accCount  = BILLS.filter(function(b){ return b.issues.indexOf('account')>=0; }).length;
+  var wtdsCount = BILLS.filter(function(b){ return b.issues.indexOf('wrong-tds')>=0; }).length;
+  var ntdsCount = BILLS.filter(function(b){ return b.issues.indexOf('no-tds')>=0; }).length;
+  var gstCount  = BILLS.filter(function(b){ return b.issues.indexOf('gst')>=0; }).length;
+  var tdsCount  = wtdsCount + ntdsCount;
+
+  ['badge-att','sn-att'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=attCount; });
+  ['badge-nar','sn-nar'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=narCount; });
+  ['badge-acc','sn-acc'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=accCount; });
+  ['badge-tds','sn-tds'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=tdsCount; });
+  ['badge-gst','sn-gst'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=gstCount; });
+  document.getElementById('badge-audit').textContent = flagged.filter(function(b){ return b.score<65; }).length;
+  document.getElementById('ic-att').textContent  = attCount;
+  document.getElementById('ic-nar').textContent  = narCount;
+  document.getElementById('ic-acc').textContent  = accCount;
+  document.getElementById('ic-wtds').textContent = wtdsCount;
+  document.getElementById('ic-ntds').textContent = ntdsCount;
+  document.getElementById('ic-gst').textContent  = gstCount;
+  if (BILLS.length) {
+    document.getElementById('ip-att').textContent  = Math.round(attCount/BILLS.length*100)+'%';
+    document.getElementById('ip-nar').textContent  = Math.round(narCount/BILLS.length*100)+'%';
+    document.getElementById('ip-acc').textContent  = Math.round(accCount/BILLS.length*100)+'%';
+    document.getElementById('ip-wtds').textContent = Math.round(wtdsCount/BILLS.length*100)+'%';
+    document.getElementById('ip-ntds').textContent = Math.round(ntdsCount/BILLS.length*100)+'%';
+    document.getElementById('ip-gst').textContent  = Math.round(gstCount/BILLS.length*100)+'%';
+  }
+
+  if (wrap) wrap.style.display = 'none';
+  var okBox = document.getElementById('dash-ok-box');
+  okBox.style.display = 'block';
+  okBox.textContent = '✅ Scan complete — ' + BILLS.length + ' bills reviewed. ' + clean.length + ' bills fully compliant.';
+
+  renderDashBills();
+  filterAudit('all');
+  renderAttachment();
+  renderNarration();
+  renderAccount();
+  renderTDS();
+  renderGST();
+
+  var scanTime = new Date().toLocaleString('en-IN');
+  document.getElementById('sb-scan').textContent = 'Last scan: ' + scanTime + ' — ' + BILLS.length + ' bills';
+  toast('Scan complete — ' + flagged.length + ' bills flagged', '✅');
+  saveScanToFirebase();
 }
 
 // ── EXPORT ──

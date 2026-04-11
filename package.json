@@ -1,0 +1,16 @@
+{
+  "name": "odoo-bill-audit-proxy",
+  "version": "1.0.0",
+  "description": "CORS proxy for Odoo Bill Audit Portal — forwards browser → Odoo requests",
+  "main": "proxy.js",
+  "scripts": {
+    "start": "node proxy.js",
+    "dev": "node proxy.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

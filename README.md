@@ -1,50 +1,70 @@
 # Odoo Bill Audit Portal
 
-A single-page audit dashboard for Odoo vendor bills — checks attachments, narration, TDS, GST, and account mapping. Scan results and settings are persisted to **Firebase Firestore**.
+A single-page audit dashboard for Odoo vendor bills — checks attachments,
+narration, TDS, GST, and account mapping against a **live Odoo instance**.
+Scan results and settings are persisted to **Firebase Firestore**.
 
 ---
 
-## Live Demo
-Once deployed on Render, your app will be at:
-`https://odoo-bill-audit.onrender.com` (or your chosen service name)
+## Architecture
+
+```
+Browser (index.html)
+    │
+    ├─── Direct ──────────────────────────► Odoo  (self-hosted with CORS headers)
+    │
+    └─── Via Proxy ──► odoo-cors-proxy ──► Odoo  (odoo.com SaaS or any host
+                        (Node on Render)           without CORS headers)
+```
+
+| Layer    | Technology                         |
+|----------|------------------------------------|
+| Frontend | Vanilla HTML/CSS/JS (single file)  |
+| Proxy    | Node.js Express (Render Web Service)|
+| Hosting  | Render (Static Site + Web Service) |
+| Database | Firebase Firestore                 |
 
 ---
 
-## Stack
-| Layer | Technology |
-|---|---|
-| Frontend | Vanilla HTML/CSS/JS (single file) |
-| Hosting | Render (Static Site) |
-| Database | Firebase Firestore |
+## Do I need the proxy?
+
+| Odoo hosting          | Need proxy? |
+|-----------------------|-------------|
+| odoo.com SaaS         | **Yes** — browsers are blocked by CORS |
+| Self-hosted (nginx)   | Only if you haven't added CORS headers |
+| Self-hosted (same domain) | No |
+
+### Adding CORS headers to self-hosted Odoo (nginx)
+
+```nginx
+location / {
+    add_header 'Access-Control-Allow-Origin'  'https://odoo-bill-audit.onrender.com' always;
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+    add_header 'Access-Control-Allow-Headers' 'Content-Type, Cookie' always;
+    add_header 'Access-Control-Allow-Credentials' 'true' always;
+    if ($request_method = OPTIONS) { return 204; }
+    proxy_pass http://127.0.0.1:8069;
+}
+```
 
 ---
 
 ## 1 — Firebase Setup
 
-1. Go to [https://console.firebase.google.com](https://console.firebase.google.com) and create a project (e.g. `odoo-bill-audit`).
-2. In the project, click **Add app → Web**. Give it a nickname and register.
-3. Copy the `firebaseConfig` object shown — you'll need these values:
-   - `apiKey`
-   - `projectId`
-   - `authDomain`
-   - `appId`
-4. In the Firebase console, go to **Build → Firestore Database → Create database**.
-   - Choose **Start in test mode** (you can add security rules later).
-   - Pick a region close to you (e.g. `asia-south1` for India).
+1. Go to [https://console.firebase.google.com](https://console.firebase.google.com) → create project (e.g. `odoo-bill-audit`).
+2. **Add app → Web**. Copy the `firebaseConfig` object.
+3. **Build → Firestore Database → Create database** → Start in test mode → region `asia-south1`.
 
-That's it. No Firebase CLI needed — the app uses the JS SDK via CDN.
+No CLI needed — the app uses the JS SDK via CDN.
 
 ---
 
 ## 2 — GitHub Setup
 
 ```bash
-# Clone or init repo
 git init
 git add .
 git commit -m "Initial commit — Odoo Bill Audit Portal"
-
-# Push to GitHub (create a new repo on github.com first)
 git remote add origin https://github.com/YOUR_USERNAME/odoo-bill-audit.git
 git branch -M main
 git push -u origin main
@@ -54,78 +74,87 @@ git push -u origin main
 
 ## 3 — Deploy on Render
 
-1. Go to [https://render.com](https://render.com) and sign in.
-2. Click **New → Static Site**.
-3. Connect your GitHub account and select the `odoo-bill-audit` repo.
-4. Render will auto-detect `render.yaml`. Settings will be:
-   - **Publish directory:** `.`
-   - **Build command:** *(leave blank)*
-5. Click **Create Static Site**. Render will deploy in ~30 seconds.
+The `render.yaml` deploys **two services** automatically.
 
-> No environment variables are needed — Firebase credentials are entered directly in the app's **Settings → Firebase Configuration** panel and saved to `localStorage` for auto-reconnect on reload.
+1. Go to [https://render.com](https://render.com) → **New → Blueprint**.
+2. Connect your GitHub repo.
+3. Render detects `render.yaml` and creates both services:
+   - **`odoo-bill-audit`** — static site (the dashboard)
+   - **`odoo-cors-proxy`** — Node.js proxy (needed for odoo.com SaaS)
+4. After deploy, copy the proxy URL (e.g. `https://odoo-cors-proxy.onrender.com`).
+5. In Render dashboard → `odoo-cors-proxy` service → **Environment** → set:
+   ```
+   ALLOWED_ORIGIN = https://odoo-bill-audit.onrender.com
+   ```
+
+> **Free tier note:** Render free services spin down after 15 minutes of inactivity.
+> The first scan after a cold start may take ~30 seconds while the proxy wakes up.
+> Upgrade to the Starter plan ($7/mo) to avoid cold starts.
 
 ---
 
-## 4 — Connect Firebase in the App
+## 4 — Connect Odoo & Firebase in the App
 
-1. Open your deployed app (or `index.html` locally).
-2. Go to **Settings** (top-right gear icon).
-3. Scroll to the **🔥 Firebase Configuration** panel.
-4. Paste in your `apiKey`, `Project ID`, `Auth Domain`, and `App ID`.
-5. Click **Connect Firebase**.
+1. Open your deployed app → **Settings** (top-right gear icon).
+2. **Odoo Connection** panel:
+   - **Odoo URL** — e.g. `https://ginesys.odoo.com`
+   - **Database** — your Odoo database name
+   - **Username** — your Odoo login email
+   - **Password / API Key** — your Odoo password
+   - **CORS Proxy URL** — paste the proxy URL from step 3 (leave blank if self-hosted with CORS)
+   - Click **Test Connection** — you should see your user name and company.
+3. **Firebase Configuration** panel:
+   - Paste `apiKey`, `Project ID`, `Auth Domain`, `App ID`.
+   - Click **Connect Firebase**.
+4. Click **Save Settings**, then **▶ Run Full Scan**.
 
-From that point on:
-- Every **Run Full Scan** automatically saves results to Firestore (`scanResults` collection).
-- On next load, the last scan is restored from Firestore.
-- **Save Settings** and **Save Rules** also persist to Firestore.
+---
+
+## What the scan does (live Odoo calls)
+
+| Step | Odoo model queried | Check |
+|------|--------------------|-------|
+| Auth | `/web/session/authenticate` | Login |
+| Bills | `account.move` | Fetch all posted vendor bills |
+| Attachments | `ir.attachment` | Flag bills with no PDF/image attached |
+| Narration | `account.move` `.narration` / `.ref` | Flag empty or too-short descriptions |
+| Account pattern | `account.move.line` | Flag deviations from vendor's historical account |
+| TDS | `account.move.line` (tax lines) | Flag missing or potentially wrong tax sections |
+| GST | tax line names | Flag bills with contradictory IGST + CGST/SGST |
 
 ---
 
 ## Firestore Data Structure
 
 ```
-scanResults/          ← one document per scan
+scanResults/
   {auto-id}/
-    timestamp         (server timestamp)
-    scanDate          (ISO string)
+    timestamp, scanDate
     summary: { total, flagged, clean, avgScore }
-    bills: [ ...array of bill objects ]
+    bills: [ ...array of bill objects with _odooId ]
 
 config/
-  odoo/               ← Odoo connection settings
-    odooUrl, odooDb, odooUser, updatedAt
-  rules/              ← Audit rule thresholds
-    minNarLen, accThreshold, tdsThreshold, dupDays, updatedAt
+  odoo/    — odooUrl, odooDb, odooUser, odooProxy, updatedAt
+  rules/   — minNarLen, accThreshold, tdsThreshold, dupDays, updatedAt
 ```
 
 ---
 
 ## Local Development
 
-Just open `index.html` in a browser — no build step required.
-
 ```bash
-# Optional: serve with any static server
+# Frontend — just open index.html in a browser (no build step)
 npx serve .
-# or
-python3 -m http.server 8080
+
+# Proxy (optional for local testing)
+node proxy.js
+# Then set CORS Proxy URL in Settings to: http://localhost:3000
 ```
 
 ---
 
-## Security Note
+## Security Notes
 
-Before going to production, update Firestore security rules to restrict read/write access. Example:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-```
-
-Add Firebase Authentication to the app if you want user-level access control.
+- The password / API key is stored only in your browser's `localStorage` — it is **never** sent to Firebase.
+- Before going to production, lock down Firestore rules and set `ALLOWED_ORIGIN` on the proxy to your exact frontend URL.
+- Consider using an [Odoo API key](https://www.odoo.com/documentation/17.0/developer/reference/external_api.html#api-keys) instead of your password.

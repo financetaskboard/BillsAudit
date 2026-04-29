@@ -200,7 +200,21 @@ tr.flag-row td{background:#fff8f8}
 .home-card-count{font-size:20px;font-weight:300}
 .home-card-count.red{color:var(--red)}.home-card-count.blue{color:var(--accent)}.home-card-count.green{color:var(--green)}.home-card-count.gold{color:#835b00}
 
-/* REPORT SECTION */
+/* P&L EXPENSES TABLE */
+.pl-month-cell{font-size:11.5px;font-variant-numeric:tabular-nums}
+.pl-total-col{background:#f0f7ff;font-weight:700;color:var(--accent)}
+.pl-group-header td{background:#f3f2f1;font-weight:700;font-size:11.5px;color:var(--text);letter-spacing:.3px;border-top:2px solid var(--border)}
+.pl-sub-row td{padding-left:24px!important}
+.pl-zero{color:#c8c6c4}
+.pl-pos{color:var(--text)}
+.pl-neg{color:var(--red)}
+.pl-heat-1{background:#fff8e1}.pl-heat-2{background:#ffe082}.pl-heat-3{background:#ffca28}.pl-heat-4{background:#fb8c00;color:#fff}.pl-heat-5{background:#e53935;color:#fff}
+th.pl-month{min-width:72px;text-align:right}
+th.pl-name{min-width:180px;text-align:left}
+th.pl-tag-col{min-width:80px;text-align:left}
+th.pl-mis-col{min-width:110px;text-align:left}
+th.pl-total{min-width:90px;text-align:right;background:#e8f4fd}
+
 .rep-section{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:14px 18px;margin-bottom:12px}
 .rep-title{font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .rep-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
@@ -245,6 +259,7 @@ tr.flag-row td{background:#fff8f8}
   <div class="dtab" onclick="switchTab('account')"><span class="ic">🏦</span> Accounts <span class="dtab-badge" id="badge-acc">0</span></div>
   <div class="dtab" onclick="switchTab('tds')"><span class="ic">%</span> TDS <span class="dtab-badge warn" id="badge-tds">0</span></div>
   <div class="dtab" onclick="switchTab('gst')"><span class="ic">G</span> GST <span class="dtab-badge" id="badge-gst">0</span></div>
+  <div class="dtab" onclick="switchTab('pl-expenses')"><span class="ic">📉</span> P&amp;L Expenses</div>
   <div class="dtab" onclick="switchTab('reports')"><span class="ic">📊</span> Reports</div>
   <div class="databar-right">
     <button class="dbtn" onclick="switchTab('settings')">⚙ Settings</button>
@@ -266,6 +281,8 @@ tr.flag-row td{background:#fff8f8}
   <div class="ni" id="ni-account" onclick="switchTab('account')"><span class="ic">🏦</span> Wrong Account <span class="nbadge gold" id="sn-acc">0</span></div>
   <div class="ni" id="ni-tds" onclick="switchTab('tds')"><span class="ic">%</span> TDS Issues <span class="nbadge warn" id="sn-tds">0</span></div>
   <div class="ni" id="ni-gst" onclick="switchTab('gst')"><span class="ic">G</span> GST Issues <span class="nbadge gold" id="sn-gst">5</span></div>
+  <div class="sec-lbl">Analysis</div>
+  <div class="ni" id="ni-pl-expenses" onclick="switchTab('pl-expenses')"><span class="ic">📉</span> P&amp;L Expenses</div>
   <div class="sec-lbl">Output</div>
   <div class="ni" id="ni-reports" onclick="switchTab('reports')"><span class="ic">📊</span> Reports &amp; Export</div>
   <div class="ni" id="ni-settings" onclick="switchTab('settings')"><span class="ic">⚙</span> Settings</div>
@@ -630,6 +647,108 @@ tr.flag-row td{background:#fff8f8}
   </div>
 </div>
 
+<!-- ══ P&L EXPENSES PAGE ══ -->
+<div class="page" id="page-pl-expenses">
+  <div class="ptb">
+    <div class="pdot" style="background:var(--purple)"></div>
+    <span class="ptitle">P&amp;L Expenses Report</span>
+    <span class="pbc">/ Month-wise expense analysis from Profit &amp; Loss</span>
+    <div class="tbr">
+      <select class="fsel" id="pl-fy-sel" onchange="renderPLExpenses()">
+        <option value="2026">FY 2025–26</option>
+        <option value="2025">FY 2024–25</option>
+        <option value="2024">FY 2023–24</option>
+      </select>
+      <select class="fsel" id="pl-mis-filter" onchange="renderPLExpenses()">
+        <option value="">All MIS Groups</option>
+        <option value="Direct">Direct Costs</option>
+        <option value="Indirect">Indirect Costs</option>
+        <option value="Admin">Admin &amp; Overhead</option>
+        <option value="Finance">Finance &amp; Bank</option>
+        <option value="HR">HR &amp; Payroll</option>
+      </select>
+      <select class="fsel" id="pl-tag-filter" onchange="renderPLExpenses()">
+        <option value="">All Tags</option>
+        <option value="Opex">OPEX</option>
+        <option value="Capex">CAPEX</option>
+        <option value="Statutory">Statutory</option>
+        <option value="Variable">Variable</option>
+        <option value="Fixed">Fixed</option>
+      </select>
+      <button class="btn btn-default" onclick="fetchPLExpenses()">🔄 Fetch from Odoo</button>
+      <button class="btn btn-default" onclick="exportPLCSV()">⬇ Export CSV</button>
+    </div>
+  </div>
+  <div class="page-inner">
+    <!-- KPI Row -->
+    <div class="kpi-row" id="pl-kpi-row">
+      <div class="kpi purple"><div class="kpi-lbl">Total Expenses (YTD)</div><div class="kpi-val purple" id="pl-kpi-total">—</div><div class="kpi-sub">All expense heads</div></div>
+      <div class="kpi red"><div class="kpi-lbl">Highest Month</div><div class="kpi-val red" id="pl-kpi-peak">—</div><div class="kpi-sub" id="pl-kpi-peak-lbl">—</div></div>
+      <div class="kpi gold"><div class="kpi-lbl">Avg Monthly Spend</div><div class="kpi-val gold" id="pl-kpi-avg">—</div><div class="kpi-sub">Across posted months</div></div>
+      <div class="kpi blue"><div class="kpi-lbl">Expense Heads</div><div class="kpi-val blue" id="pl-kpi-heads">—</div><div class="kpi-sub">Distinct GL accounts</div></div>
+      <div class="kpi green"><div class="kpi-lbl">MIS Groups</div><div class="kpi-val green" id="pl-kpi-groups">—</div><div class="kpi-sub">Active groups in view</div></div>
+    </div>
+
+    <!-- Connection notice -->
+    <div class="info-box" id="pl-info-box">
+      ℹ Click <strong>Fetch from Odoo</strong> to load live expense data from your P&amp;L accounts, or view the <strong>demo data</strong> already loaded below. Filters (MIS Group, Tag, FY) apply to both live and demo data.
+    </div>
+
+    <!-- Filter bar -->
+    <div class="fbar">
+      <span class="flbl">🔎 Search</span>
+      <div class="sbx"><span>🔍</span><input type="text" placeholder="Search expense name…" id="pl-search" oninput="renderPLExpenses()"/></div>
+      <span class="flbl" style="margin-left:8px">Group by</span>
+      <select class="fsel" id="pl-group-by" onchange="renderPLExpenses()">
+        <option value="none">None</option>
+        <option value="mis">MIS Group</option>
+        <option value="tag">Tag</option>
+      </select>
+      <div class="fr">
+        <button class="btn btn-default" style="font-size:11px;padding:4px 9px" onclick="toggleAllRows()">Expand / Collapse</button>
+      </div>
+    </div>
+
+    <!-- Main Table -->
+    <div class="tcard">
+      <div class="thdr">
+        <span class="thdr-title" id="pl-tbl-title">Expense Report — Month-wise</span>
+        <span class="thdr-sub" id="pl-tbl-sub"></span>
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+          <span style="font-size:11px;color:var(--muted)">Values in ₹</span>
+        </div>
+      </div>
+      <div class="twrap" style="overflow-x:auto">
+        <table id="pl-table">
+          <thead>
+            <tr id="pl-thead-row">
+              <!-- built by JS -->
+            </tr>
+          </thead>
+          <tbody id="pl-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <span class="pager-info" id="pl-pager-info"></span>
+        <span style="font-size:11px;color:var(--muted)" id="pl-fetch-time"></span>
+      </div>
+    </div>
+
+    <!-- MIS Group Summary -->
+    <div class="tcard">
+      <div class="thdr"><span class="thdr-title">MIS Group Summary</span><span class="thdr-sub">Rolled-up totals per group</span></div>
+      <div class="twrap">
+        <table id="pl-mis-table">
+          <thead>
+            <tr id="pl-mis-head"></tr>
+          </thead>
+          <tbody id="pl-mis-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ REPORTS PAGE ══ -->
 <div class="page" id="page-reports">
   <div class="ptb">
@@ -983,7 +1102,7 @@ function renderGST(){
 }
 
 // ── TAB SWITCHING ──
-var ALL_TABS = ['dashboard','audit','attachment','narration','account','tds','gst','reports','settings'];
+var ALL_TABS = ['dashboard','audit','attachment','narration','account','tds','gst','pl-expenses','reports','settings'];
 function switchTab(t){
   ALL_TABS.forEach(function(id){
     var page = document.getElementById('page-'+id);
@@ -993,8 +1112,9 @@ function switchTab(t){
   });
   document.querySelectorAll('.dtab').forEach(function(el){el.classList.remove('active');});
   var dtabs = document.querySelectorAll('.dtab');
-  var tabMap = {'dashboard':0,'audit':1,'attachment':2,'narration':3,'account':4,'tds':5,'gst':6,'reports':7};
+  var tabMap = {'dashboard':0,'audit':1,'attachment':2,'narration':3,'account':4,'tds':5,'gst':6,'pl-expenses':7,'reports':8};
   if(tabMap[t]!==undefined && dtabs[tabMap[t]]) dtabs[tabMap[t]].classList.add('active');
+  if(t==='pl-expenses') initPLIfNeeded();
 }
 
 // ── ODOO SETTINGS HELPERS ──
@@ -1538,6 +1658,372 @@ function saveScanToFirebase() {
     })
     .catch(function(e) { toast('Save failed: ' + e.message, '❌'); });
 }
+
+
+// ══════════════════════════════════════════════════════
+// P&L EXPENSES MODULE
+// ══════════════════════════════════════════════════════
+
+// ── MONTHS CONFIG ──
+var PL_MONTHS = [
+  {key:'Apr', label:'Apr'},{key:'May', label:'May'},{key:'Jun', label:'Jun'},
+  {key:'Jul', label:'Jul'},{key:'Aug', label:'Aug'},{key:'Sep', label:'Sep'},
+  {key:'Oct', label:'Oct'},{key:'Nov', label:'Nov'},{key:'Dec', label:'Dec'},
+  {key:'Jan', label:'Jan'},{key:'Feb', label:'Feb'},{key:'Mar', label:'Mar'}
+];
+
+// ── DEMO DATA ──
+// Structure: { account, code, mis, tag, monthly:{Apr..Mar}, total }
+var PL_DATA = (function(){
+  function rnd(lo,hi){ return Math.floor(Math.random()*(hi-lo+1)+lo)*100; }
+  var rows = [
+    {account:'Office Rent',         code:'521000', mis:'Admin',    tag:'Fixed',     Apr:145000,May:145000,Jun:145000,Jul:150000,Aug:150000,Sep:150000,Oct:155000,Nov:155000,Dec:155000,Jan:160000,Feb:160000,Mar:160000},
+    {account:'Electricity & Power', code:'521010', mis:'Admin',    tag:'Variable',  Apr:42000, May:47000, Jun:63000, Jul:71000, Aug:68000, Sep:55000, Oct:38000, Nov:34000, Dec:36000, Jan:40000, Feb:38000, Mar:45000},
+    {account:'Salaries & Wages',    code:'511000', mis:'HR',       tag:'Fixed',     Apr:620000,May:620000,Jun:635000,Jul:635000,Aug:640000,Sep:640000,Oct:655000,Nov:655000,Dec:680000,Jan:680000,Feb:680000,Mar:720000},
+    {account:'Staff Bonus',         code:'511010', mis:'HR',       tag:'Variable',  Apr:0,     May:0,     Jun:80000, Jul:0,     Aug:0,     Sep:80000, Oct:0,     Nov:0,     Dec:180000,Jan:0,     Feb:0,     Mar:250000},
+    {account:'Internet & Telecom',  code:'522000', mis:'Admin',    tag:'Fixed',     Apr:18000, May:18000, Jun:18000, Jul:20000, Aug:20000, Sep:20000, Oct:20000, Nov:20000, Dec:20000, Jan:22000, Feb:22000, Mar:22000},
+    {account:'Professional Fees',   code:'531000', mis:'Indirect', tag:'Opex',      Apr:75000, May:90000, Jun:60000, Jul:85000, Aug:110000,Sep:70000, Oct:65000, Nov:95000, Dec:120000,Jan:80000, Feb:70000, Mar:150000},
+    {account:'Audit & Legal Fees',  code:'531010', mis:'Finance',  tag:'Statutory', Apr:0,     May:0,     Jun:125000,Jul:0,     Aug:0,     Sep:0,     Oct:0,     Nov:0,     Dec:0,     Jan:0,     Feb:0,     Mar:180000},
+    {account:'Bank Charges',        code:'541000', mis:'Finance',  tag:'Variable',  Apr:8200,  May:7400,  Jun:9100,  Jul:11200, Aug:8600,  Sep:10300, Oct:7800,  Nov:9500,  Dec:14200, Jan:8100,  Feb:7900,  Mar:12500},
+    {account:'Advertising & Mktg',  code:'551000', mis:'Indirect', tag:'Opex',      Apr:55000, May:62000, Jun:48000, Jul:72000, Aug:66000, Sep:58000, Oct:80000, Nov:95000, Dec:130000,Jan:45000, Feb:40000, Mar:95000},
+    {account:'Travelling Expenses',  code:'561000', mis:'Indirect', tag:'Variable',  Apr:32000, May:28000, Jun:41000, Jul:38000, Aug:22000, Sep:35000, Oct:45000, Nov:52000, Dec:68000, Jan:29000, Feb:31000, Mar:55000},
+    {account:'Repairs & Maintenance',code:'521020', mis:'Admin',    tag:'Variable',  Apr:15000, May:22000, Jun:8000,  Jul:35000, Aug:12000, Sep:18000, Oct:9000,  Nov:28000, Dec:14000, Jan:19000, Feb:11000, Mar:32000},
+    {account:'IT & Software',       code:'522010', mis:'Admin',    tag:'Opex',      Apr:38000, May:38000, Jun:43000, Jul:38000, Aug:38000, Sep:52000, Oct:38000, Nov:38000, Dec:38000, Jan:45000, Feb:45000, Mar:65000},
+    {account:'Freight & Logistics', code:'571000', mis:'Direct',   tag:'Variable',  Apr:88000, May:74000, Jun:92000, Jul:115000,Aug:98000, Sep:105000,Oct:122000,Nov:134000,Dec:157000,Jan:81000, Feb:76000, Mar:143000},
+    {account:'Raw Material Handling',code:'511020', mis:'Direct',   tag:'Direct',    Apr:210000,May:195000,Jun:228000,Jul:245000,Aug:220000,Sep:235000,Oct:262000,Nov:278000,Dec:310000,Jan:188000,Feb:175000,Mar:295000},
+    {account:'GST Penalties',       code:'541010', mis:'Finance',  tag:'Statutory', Apr:0,     May:12000, Jun:0,     Jul:0,     Aug:8500,  Sep:0,     Oct:0,     Nov:0,     Dec:0,     Jan:15000, Feb:0,     Mar:0},
+    {account:'Depreciation',        code:'581000', mis:'Finance',  tag:'Fixed',     Apr:95000, May:95000, Jun:95000, Jul:95000, Aug:95000, Sep:95000, Oct:95000, Nov:95000, Dec:95000, Jan:95000, Feb:95000, Mar:95000},
+    {account:'Printing & Stationery',code:'521030',mis:'Admin',    tag:'Opex',      Apr:5200,  May:4800,  Jun:6100,  Jul:5500,  Aug:4200,  Sep:7800,  Oct:5100,  Nov:6300,  Dec:9200,  Jan:4400,  Feb:3900,  Mar:7600},
+    {account:'Security Services',   code:'521040', mis:'Admin',    tag:'Fixed',     Apr:28000, May:28000, Jun:28000, Jul:28000, Aug:28000, Sep:28000, Oct:30000, Nov:30000, Dec:30000, Jan:30000, Feb:30000, Mar:30000},
+    {account:'Housekeeping',        code:'521050', mis:'Admin',    tag:'Fixed',     Apr:18500, May:18500, Jun:18500, Jul:18500, Aug:18500, Sep:18500, Oct:20000, Nov:20000, Dec:20000, Jan:20000, Feb:20000, Mar:20000},
+    {account:'TDS Interest/Penalty',code:'541020', mis:'Finance',  tag:'Statutory', Apr:0,     May:0,     Jun:5800,  Jul:0,     Aug:0,     Sep:0,     Oct:9200,  Nov:0,     Dec:0,     Jan:0,     Feb:6400,  Mar:0},
+  ];
+  rows.forEach(function(r){
+    var total = 0;
+    PL_MONTHS.forEach(function(m){ total += (r[m.key]||0); });
+    r.total = total;
+  });
+  return rows;
+})();
+
+// Tag colors
+var PL_TAG_COLOR = {
+  'Fixed':    'tag-info',
+  'Variable': 'tag-warn',
+  'Opex':     'tag-purple',
+  'Capex':    'tag-ok',
+  'Statutory':'tag-err',
+  'Direct':   'tag-ok',
+};
+var PL_MIS_COLOR = {
+  'Direct':   'tag-ok',
+  'Indirect': 'tag-purple',
+  'Admin':    'tag-info',
+  'Finance':  'tag-warn',
+  'HR':       'tag-gray',
+};
+
+function pINRShort(v){
+  if(v===0) return '<span class="pl-zero">—</span>';
+  if(v>=10000000) return '<span class="pl-pos">₹'+(v/10000000).toFixed(2)+'Cr</span>';
+  if(v>=100000)   return '<span class="pl-pos">₹'+(v/100000).toFixed(2)+'L</span>';
+  return '<span class="pl-pos">₹'+v.toLocaleString('en-IN')+'</span>';
+}
+function pINRFull(v){
+  return v===0?'—':'₹'+v.toLocaleString('en-IN');
+}
+
+// Heatmap intensity (0-5 bands)
+function heatClass(v, max){
+  if(!v || !max) return '';
+  var pct = v/max;
+  if(pct>0.85) return 'pl-heat-5';
+  if(pct>0.65) return 'pl-heat-4';
+  if(pct>0.45) return 'pl-heat-3';
+  if(pct>0.25) return 'pl-heat-2';
+  if(pct>0)    return 'pl-heat-1';
+  return '';
+}
+
+var PL_ALL_EXPANDED = true;
+
+function toggleAllRows(){
+  PL_ALL_EXPANDED = !PL_ALL_EXPANDED;
+  document.querySelectorAll('.pl-sub-row').forEach(function(r){
+    r.style.display = PL_ALL_EXPANDED ? '' : 'none';
+  });
+}
+
+function renderPLExpenses(){
+  var misFilter = (document.getElementById('pl-mis-filter')||{value:''}).value;
+  var tagFilter = (document.getElementById('pl-tag-filter')||{value:''}).value;
+  var search    = ((document.getElementById('pl-search')||{value:''}).value||'').toLowerCase();
+  var groupBy   = (document.getElementById('pl-group-by')||{value:'none'}).value;
+
+  var data = PL_DATA.filter(function(r){
+    if(misFilter && r.mis !== misFilter) return false;
+    if(tagFilter && r.tag !== tagFilter) return false;
+    if(search && r.account.toLowerCase().indexOf(search)===-1 && r.code.indexOf(search)===-1) return false;
+    return true;
+  });
+
+  // Update KPIs
+  var ytdTotal = data.reduce(function(s,r){return s+r.total;},0);
+  var monthTotals = PL_MONTHS.map(function(m){
+    return {key:m.key,label:m.label,sum:data.reduce(function(s,r){return s+(r[m.key]||0);},0)};
+  });
+  var peakMonth = monthTotals.reduce(function(a,b){return b.sum>a.sum?b:a;},{sum:0,label:'—'});
+  var postedMonths = monthTotals.filter(function(m){return m.sum>0;}).length;
+  var avgMonthly = postedMonths ? Math.round(ytdTotal/postedMonths) : 0;
+  var misGroups = [...new Set(data.map(function(r){return r.mis;}))].length;
+
+  document.getElementById('pl-kpi-total').textContent    = pINRFull(ytdTotal);
+  document.getElementById('pl-kpi-peak').textContent     = pINRFull(peakMonth.sum);
+  document.getElementById('pl-kpi-peak-lbl').textContent = peakMonth.label||'—';
+  document.getElementById('pl-kpi-avg').textContent      = pINRFull(avgMonthly);
+  document.getElementById('pl-kpi-heads').textContent    = data.length;
+  document.getElementById('pl-kpi-groups').textContent   = misGroups;
+
+  // Build table header
+  var headHtml = '<th class="left pl-name">Expense Account</th>'
+    + '<th class="left pl-tag-col">Tag</th>'
+    + '<th class="left pl-mis-col">MIS Group</th>';
+  PL_MONTHS.forEach(function(m){
+    headHtml += '<th class="pl-month">'+m.label+'</th>';
+  });
+  headHtml += '<th class="pl-total">Total</th>';
+  document.getElementById('pl-thead-row').innerHTML = headHtml;
+
+  // Global max for heatmap
+  var allVals = [];
+  data.forEach(function(r){ PL_MONTHS.forEach(function(m){ allVals.push(r[m.key]||0); }); });
+  var globalMax = Math.max.apply(null, allVals.concat([1]));
+
+  var bodyHtml = '';
+
+  if(groupBy === 'none'){
+    data.forEach(function(r){
+      bodyHtml += buildPLRow(r, globalMax, false);
+    });
+    // Grand total row
+    bodyHtml += buildPLGrandTotal(data, monthTotals, ytdTotal);
+  } else {
+    var groupKey = groupBy === 'mis' ? 'mis' : 'tag';
+    var groups = {};
+    data.forEach(function(r){
+      var g = r[groupKey]||'Other';
+      if(!groups[g]) groups[g]=[];
+      groups[g].push(r);
+    });
+    Object.keys(groups).sort().forEach(function(g){
+      var gRows = groups[g];
+      var gTotal = gRows.reduce(function(s,r){return s+r.total;},0);
+      var gMonths = PL_MONTHS.map(function(m){return gRows.reduce(function(s,r){return s+(r[m.key]||0);},0);});
+      // Group header
+      var cls = groupBy==='mis'?(PL_MIS_COLOR[g]||'tag-gray'):(PL_TAG_COLOR[g]||'tag-gray');
+      bodyHtml += '<tr class="pl-group-header">'
+        + '<td class="left" colspan="3"><span class="tag '+cls+'">'+g+'</span>'
+        + ' <span style="font-size:11px;color:var(--muted);font-weight:400">('+gRows.length+' heads)</span></td>';
+      gMonths.forEach(function(s){
+        bodyHtml += '<td class="pl-month-cell pl-total-col" style="font-weight:700">'+pINRFull(s)+'</td>';
+      });
+      bodyHtml += '<td class="pl-total-col" style="font-weight:700">'+pINRFull(gTotal)+'</td></tr>';
+      // Sub-rows
+      gRows.forEach(function(r){
+        bodyHtml += buildPLRow(r, globalMax, true);
+      });
+    });
+    bodyHtml += buildPLGrandTotal(data, monthTotals, ytdTotal);
+  }
+
+  document.getElementById('pl-tbody').innerHTML = bodyHtml || '<tr><td colspan="16" style="text-align:center;padding:28px;color:var(--muted)">No expense data matches current filters</td></tr>';
+
+  document.getElementById('pl-tbl-sub').textContent = data.length + ' expense heads · '+pINRFull(ytdTotal)+' YTD';
+  document.getElementById('pl-pager-info').textContent = 'Showing '+data.length+' of '+PL_DATA.length+' accounts';
+
+  // MIS summary table
+  buildMISSummary(monthTotals);
+}
+
+function buildPLRow(r, globalMax, isSub){
+  var tagCls = PL_TAG_COLOR[r.tag]||'tag-gray';
+  var misCls = PL_MIS_COLOR[r.mis]||'tag-gray';
+  var cls = isSub ? ' class="pl-sub-row"' : '';
+  var html = '<tr'+cls+'>'
+    + '<td class="left"><span style="font-size:10px;color:var(--muted);margin-right:6px">'+r.code+'</span>'+r.account+'</td>'
+    + '<td class="left"><span class="tag '+tagCls+'">'+r.tag+'</span></td>'
+    + '<td class="left"><span class="tag '+misCls+'">'+r.mis+'</span></td>';
+  PL_MONTHS.forEach(function(m){
+    var v = r[m.key]||0;
+    var hc = heatClass(v, globalMax);
+    html += '<td class="pl-month-cell '+(hc?hc:'')+'" title="'+m.label+': '+pINRFull(v)+'">'+pINRFull(v)+'</td>';
+  });
+  html += '<td class="pl-total-col">'+pINRFull(r.total)+'</td></tr>';
+  return html;
+}
+
+function buildPLGrandTotal(data, monthTotals, ytdTotal){
+  var html = '<tr class="total-row">'
+    + '<td class="left" colspan="3">GRAND TOTAL</td>';
+  monthTotals.forEach(function(m){
+    html += '<td class="pl-month-cell" style="color:var(--accent);font-weight:700">'+pINRFull(m.sum)+'</td>';
+  });
+  html += '<td style="color:var(--accent);font-weight:700">'+pINRFull(ytdTotal)+'</td></tr>';
+  return html;
+}
+
+function buildMISSummary(monthTotals){
+  var data = PL_DATA;
+  var misFilter = (document.getElementById('pl-mis-filter')||{value:''}).value;
+  var tagFilter = (document.getElementById('pl-tag-filter')||{value:''}).value;
+  if(misFilter || tagFilter){
+    data = data.filter(function(r){
+      if(misFilter && r.mis!==misFilter) return false;
+      if(tagFilter && r.tag!==tagFilter) return false;
+      return true;
+    });
+  }
+  var groups = {};
+  data.forEach(function(r){
+    if(!groups[r.mis]) groups[r.mis]={total:0,heads:0};
+    groups[r.mis].total += r.total;
+    groups[r.mis].heads++;
+  });
+  var headHtml = '<th class="left">MIS Group</th><th class="left">Tag Mix</th><th class="left">Heads</th>';
+  PL_MONTHS.forEach(function(m){ headHtml+='<th class="pl-month">'+m.label+'</th>'; });
+  headHtml += '<th class="pl-total">Total</th><th class="left">% of Total</th>';
+  document.getElementById('pl-mis-head').innerHTML = headHtml;
+
+  var grandTotal = Object.values(groups).reduce(function(s,g){return s+g.total;},0)||1;
+  var bodyHtml = '';
+  Object.keys(groups).sort().forEach(function(g){
+    var gData = data.filter(function(r){return r.mis===g;});
+    var pct = ((groups[g].total/grandTotal)*100).toFixed(1);
+    var tags = [...new Set(gData.map(function(r){return r.tag;}))];
+    var misCls = PL_MIS_COLOR[g]||'tag-gray';
+    bodyHtml += '<tr><td class="left"><span class="tag '+misCls+'">'+g+'</span></td>'
+      +'<td class="left" style="font-size:11px">'+tags.map(function(t){return '<span class="tag '+(PL_TAG_COLOR[t]||'tag-gray')+'" style="margin-right:2px">'+t+'</span>';}).join('')+'</td>'
+      +'<td style="text-align:right">'+groups[g].heads+'</td>';
+    PL_MONTHS.forEach(function(m){
+      var sum = gData.reduce(function(s,r){return s+(r[m.key]||0);},0);
+      bodyHtml += '<td class="pl-month-cell">'+pINRFull(sum)+'</td>';
+    });
+    bodyHtml += '<td class="pl-total-col">'+pINRFull(groups[g].total)+'</td>'
+      +'<td><div class="score-bar"><div class="sbar-track"><div class="sbar-fill" style="width:'+pct+'%;background:var(--purple)"></div></div>'
+      +'<span style="font-size:11px;font-weight:600;color:var(--purple)">'+pct+'%</span></div></td></tr>';
+  });
+  document.getElementById('pl-mis-body').innerHTML = bodyHtml;
+}
+
+// ── FETCH FROM ODOO (live) ──
+async function fetchPLExpenses() {
+  var s = getOdooSettings();
+  if (!s.url) { toast('Set Odoo URL in Settings first', '⚠️'); return; }
+  toast('Fetching P&L expense accounts from Odoo…', '🔄');
+  document.getElementById('pl-info-box').textContent = '⏳ Fetching from Odoo…';
+  try {
+    if (!odooSession) await odooAuthenticate();
+    // Fetch expense accounts (type = expense)
+    var accounts = await odooSearchRead(
+      'account.account',
+      [['account_type','in',['expense','expense_depreciation','expense_direct_cost']]],
+      ['id','code','name','account_type','tag_ids'],
+      500,
+      'code asc'
+    );
+    if (!accounts || !accounts.length) throw new Error('No expense accounts returned');
+
+    var accountIds = accounts.map(function(a){return a.id;});
+    var fy = parseInt((document.getElementById('pl-fy-sel')||{value:'2026'}).value)||2026;
+    // Build month date ranges (Apr YYYY-1 to Mar YYYY)
+    var startYear = fy-1;
+
+    // Fetch move lines for expense accounts in the fiscal year
+    var lines = await odooSearchRead(
+      'account.move.line',
+      [
+        ['account_id','in',accountIds],
+        ['move_id.state','=','posted'],
+        ['date','>=',startYear+'-04-01'],
+        ['date','<=',fy+'-03-31']
+      ],
+      ['account_id','debit','credit','date'],
+      5000,
+      'date asc'
+    );
+
+    // Aggregate by account + month
+    var aggr = {};
+    accounts.forEach(function(a){
+      aggr[a.id] = {
+        account: a.name, code: a.code,
+        mis: 'Indirect', tag: 'Opex', // defaults (user can enhance with Odoo tags)
+        total: 0
+      };
+      PL_MONTHS.forEach(function(m){ aggr[a.id][m.key]=0; });
+    });
+
+    var monthKeys = {4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct',11:'Nov',12:'Dec',1:'Jan',2:'Feb',3:'Mar'};
+    lines.forEach(function(l){
+      var aid = l.account_id && l.account_id[0];
+      if(!aid || !aggr[aid]) return;
+      var d = new Date(l.date);
+      var mKey = monthKeys[d.getMonth()+1];
+      var net = (l.debit||0) - (l.credit||0);
+      if(mKey) aggr[aid][mKey] += net;
+      aggr[aid].total += net;
+    });
+
+    // Replace demo data
+    PL_DATA = Object.values(aggr).filter(function(r){return r.total!==0;});
+    PL_DATA.forEach(function(r){
+      PL_MONTHS.forEach(function(m){ r[m.key]=Math.round(r[m.key]); });
+      r.total = Math.round(r.total);
+    });
+
+    document.getElementById('pl-info-box').className = 'ok-box';
+    document.getElementById('pl-info-box').textContent = '✅ Live data loaded from Odoo — '+PL_DATA.length+' expense heads · FY '+startYear+'–'+fy;
+    document.getElementById('pl-fetch-time').textContent = 'Fetched at '+new Date().toLocaleTimeString('en-IN');
+    renderPLExpenses();
+    toast('P&L Expenses loaded — '+PL_DATA.length+' accounts', '✅');
+  } catch(e) {
+    document.getElementById('pl-info-box').className = 'warn-box';
+    document.getElementById('pl-info-box').textContent = '⚠️ Odoo fetch failed: '+e.message+'. Showing demo data.';
+    toast('Fetch failed: '+e.message, '❌');
+    renderPLExpenses();
+  }
+}
+
+// ── EXPORT P&L CSV ──
+function exportPLCSV(){
+  var misFilter = (document.getElementById('pl-mis-filter')||{value:''}).value;
+  var tagFilter = (document.getElementById('pl-tag-filter')||{value:''}).value;
+  var data = PL_DATA.filter(function(r){
+    if(misFilter && r.mis!==misFilter) return false;
+    if(tagFilter && r.tag!==tagFilter) return false;
+    return true;
+  });
+  var headers = ['Account Code','Account Name','Tag','MIS Group'].concat(PL_MONTHS.map(function(m){return m.label;})).concat(['Total']).join(',');
+  var rows = data.map(function(r){
+    var cols = [r.code, '"'+r.account+'"', r.tag, r.mis];
+    PL_MONTHS.forEach(function(m){ cols.push(r[m.key]||0); });
+    cols.push(r.total);
+    return cols.join(',');
+  });
+  var csv = [headers].concat(rows).join('\n');
+  var blob = new Blob([csv],{type:'text/csv'});
+  var a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='PL_Expenses_Report.csv'; a.click();
+  toast('P&L Expenses CSV exported', '📥');
+}
+
+// init P&L on first tab visit
+var PL_INITED = false;
+function initPLIfNeeded(){
+  if(!PL_INITED){ PL_INITED=true; renderPLExpenses(); }
+}
+
+// ── END P&L MODULE ──
 
 // ── LOAD LAST SCAN ──
 function loadLastScanFromFirebase() {
